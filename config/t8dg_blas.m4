@@ -19,7 +19,8 @@ T8DG_ARG_DISABLE([cblas],
   [cblas library (optionally use --enable-cblas=<CBLAS_LIBS>)],
   [CBLAS])
 if test "x$T8DG_ENABLE_CBLAS" != xno ; then
-  T8DG_CBLAS_LIBS="-lblas"
+dnl  T8DG_CBLAS_LIBS="-lblas"
+  T8DG_CBLAS_LIBS=
   if test "x$T8DG_ENABLE_CBLAS" != xyes ; then
     T8DG_CBLAS_LIBS="$T8DG_ENABLE_CBLAS"
     dnl AC_MSG_ERROR([Please provide --enable-cblas without arguments])
@@ -28,9 +29,8 @@ if test "x$T8DG_ENABLE_CBLAS" != xno ; then
   LIBS="$LIBS $T8DG_CBLAS_LIBS"
   AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[
+  #include <gsl_blas.h>
 ]],[[
-  #include <cblas.h>
-
   cblas_snrm2(0, NULL, 0);
 ]])],,
                  [AC_MSG_ERROR([Unable to link with cblas library])])

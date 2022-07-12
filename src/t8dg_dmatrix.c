@@ -12,7 +12,7 @@
 #ifdef T8DG_MKL_BLAS
 #include <mkl.h>
 #else
-#include <cblas.h>
+#include <gsl_cblas.h>
 #endif
 
 struct t8dg_dmatrix

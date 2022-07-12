@@ -9,9 +9,11 @@
 #ifndef SRC_T8DG_H_
 #define SRC_T8DG_H_
 
+
 #include <t8.h>
 #include <sc.h>
 #include <t8_forest.h>          /*maybe replace by typedef struct t8_forest *t8_forest_t */
+
 
 /** This macro opens the extern "C" brace needed in C headers.
  * It needs to be followed by a semicolon to look like a statement. */
