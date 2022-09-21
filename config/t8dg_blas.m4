@@ -31,7 +31,7 @@ dnl  T8DG_CBLAS_LIBS="-lblas"
   AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[
   #include <stddef.h>
-  #include <gsl_blas.h>
+  #include <gsl_cblas.h>
 ]],[[
   cblas_snrm2(0, NULL, 0);
 ]])],,
