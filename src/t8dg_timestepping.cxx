@@ -399,10 +399,10 @@ t8dg_timestepping_implicit_euler (t8dg_time_matrix_application time_derivative,
   CHKERRQ (ierr);
   ierr = VecDestroy (&u);
   CHKERRQ (ierr);
-#if 0
+  /* Next two lines should probably be deactivated when running on workstation  */
   ierr = KSPDestroy (&ksp);
   CHKERRQ (ierr);
-#endif
+
   t8dg_debugf ("\nImplicit Euler-Method has been completed\n");
   return 0;
 }
@@ -646,8 +646,9 @@ t8dg_timestepping_dirk (t8dg_time_matrix_application time_derivative,
   CHKERRQ (ierr);
   ierr = VecDestroy (&u);
   CHKERRQ (ierr);
-  //ierr = KSPDestroy (&ksp);
-  //CHKERRQ (ierr);
+  /* Next two lines should probably be deactivated when running on workstation  */
+  ierr = KSPDestroy (&ksp);
+  CHKERRQ (ierr);
 
   if (num_order_stages == 2) {
     t8dg_global_essentialf ("Iteration Count:\nStage 1: %d\nStage 2: %d\n", iteration_count[0], iteration_count[1]);
