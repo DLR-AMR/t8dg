@@ -555,8 +555,9 @@ t8dg_timestepping_dirk (t8dg_time_matrix_application time_derivative,
     //appctx.dirk_current_a_coeff = (*dirk_a_coeff)[step_iter][step_iter];
     appctx.dirk_current_a_coeff = t8dg_timestepping_dirk_get_coeff_a (num_order_stages, step_iter, step_iter);
 
-    /* Fill the future_local_dofs_step with zeros, so that the axpy product will not be irritated */
-    t8dg_dof_values_set_zero (appctx.future_local_dofs_step);
+    /* New comment to be set */
+    t8dg_dof_values_destroy (&(appctx.future_local_dofs_step));
+    appctx.future_local_dofs_step = t8dg_dof_values_clone (appctx.current_local_dofs);
 
     /* Accumulate the (weighted) derivations of the degrees of freedom of the former stages */
     for (iter = 0; iter < step_iter; ++iter) {
