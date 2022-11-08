@@ -60,6 +60,13 @@ double              t8dg_smooth_indicator3Dfn (const double x[3], const double t
 
 double              t8dg_circle_ring_sin_product_fn (const double x[3], const double t, void *fn_data);
 
+double              t8dg_williamson_etal_cosine_bell_fn (const double x[3], const double t, void *fn_data);
+
+double              t8dg_smooth_indicator3D_4Spheres_fn (const double x[3], const double t, void *fn_data);
+
+double              t8dg_smooth_indicator3D_3Spheres_above_below_fn (const double x[3], const double t, void *fn_data);
+
+double		    t8dg_smooth_indicator3D_bottom_fn (const double x[3], const double t, void *fn_data);
 
 double              t8dg_smooth_g (const double x);
 

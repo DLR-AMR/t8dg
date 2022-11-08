@@ -41,7 +41,7 @@ t8dg_check_options (int icmesh, const char *mshfile_prefix, int mshfile_dim, int
     t8_global_errorf ("Argument error. Invalid dimension.\n");
     return 0;
   }
-  if (!(initial_cond_arg >= 0 && initial_cond_arg <= 18)){
+  if (!(initial_cond_arg >= 0 && initial_cond_arg <= 22)){
     t8_global_errorf ("Argument error. Invalid initial condition.\n");
     return 0;
   }
