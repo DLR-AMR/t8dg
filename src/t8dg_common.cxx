@@ -312,8 +312,8 @@ double
 t8dg_smooth_indicator3D_bottom_fn (const double x[3], const double t, void *fn_data)
 {
   double              radius = 1. / (2 * 360);
-  double              smoothing_factor = 50;
-  double              center[3] = { 0.5, 0.5, 0.05 };
+  double              smoothing_factor = 40;
+  double              center[3] = { 0.5, 0.5, 0.1 };
   double              dist = t8_vec_dist (x, center);
   if (dist < radius)
     return 1;
@@ -364,7 +364,6 @@ t8dg_smooth_indicator3D_3Spheres_above_below_fn (const double x[3], const double
 
   double              center[3] = { 0.5, 0.25, 0.5 };
   /* Array for x coordinates of different center for spheres */
-  /* Center x=0 and x=1 coincide because of periodic boundaries */
   double              center_y[3] = { 0.25, 0.5, 0.75 };
   int                 center_y_len = sizeof (center_y) / sizeof (double);
 
@@ -404,11 +403,11 @@ t8dg_williamson_etal_cosine_bell_fn (const double x[3], const double t, void *fn
   const double        a = 6371220;
   const double        g = 9.80616;
   const double        radius = a / 3;
-  const double        shrinking_factor_z = radius;      //*0.05;
+  const double        shrinking_factor_z = radius;
   /* Initial values  */
 
 //  const double        center[3] = {1.5*M_PI, 0, 40000}; /* last value needs to be set/thought of */
-  const int           h_0 = 1000;
+  const int           h_0 = 1;
   double              x_globe[3] = { 0, 0, 0 }; /* needs to be set, transform input x */
 
   /* Transform deg to rad within interpolation */
@@ -427,7 +426,7 @@ t8dg_williamson_etal_cosine_bell_fn (const double x[3], const double t, void *fn
   //(altitude_max_in_m + altitude_min_in_m) * 0.5;
 
   /* x=1.5*M_PI and z=40000 before ; shifted to (0.5,0.5,0.5) on cube */
-  const double        center[3] = { 0., 0., altitude_middle_in_m };     /* last value needs to be set/thought of */
+  const double        center[3] = { 0., 0., altitude_middle_in_m };
 
   /* Great circle distance between input (transformed to globe) and center */
   double              r = a * acos (sin (center[1]) * sin (x_globe[1]) + cos (center[1]) * cos (x_globe[1]) * cos (center[0] - x_globe[0]));
