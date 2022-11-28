@@ -60,6 +60,8 @@ t8dg_common_initial_cond_fn (int initial_cond_arg)
     return t8dg_smooth_indicator3D_bottom_fn;
   case (23):
     return t8dg_smooth_indicator3D_4Spheres_between_fn;
+  case (24):
+    return t8dg_smooth_indicator3D_boundary_x_fn;
   default:
     return NULL;
   }
@@ -327,6 +329,39 @@ t8dg_smooth_indicator3D_bottom_fn (const double x[3], const double t, void *fn_d
     return 0;
   dist = (dist - radius) / (radius * smoothing_factor); /* transform to [0,1] */
   return t8dg_smooth_g (dist);
+}
+
+double
+t8dg_smooth_indicator3D_boundary_x_fn (const double x[3], const double t, void *fn_data)
+{
+  double              radius = 1. / (2 * 360);
+  double              smoothing_factor = 40;
+
+  double              center[3] = { 0, 0.5, 0.5 };
+  /* Array for x coordinates of different center for spheres */
+  /* Center x=0 and x=1 coincide because of periodic boundaries */
+  double              center_x[2] = { 0., 1. };
+  int                 center_x_len = sizeof (center_x) / sizeof (double);
+
+  double              dist;
+  double              dist_min = t8_vec_dist (x, center);
+
+  for (int idx = 0; idx < center_x_len; idx++) {
+    center[0] = center_x[idx];
+    dist = t8_vec_dist (x, center);
+
+    if (dist < dist_min)
+      dist_min = dist;
+
+    if (dist < radius)
+      return 1;
+  }
+
+  if (dist_min > (1 + smoothing_factor) * radius)
+    return 0;
+
+  dist_min = (dist_min - radius) / (radius * smoothing_factor); /* transform to [0,1] */
+  return t8dg_smooth_g (dist_min);
 }
 
 double

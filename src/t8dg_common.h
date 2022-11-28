@@ -70,6 +70,8 @@ double		          t8dg_smooth_indicator3D_bottom_fn (const double x[3], const do
 
 double              t8dg_smooth_indicator3D_4Spheres_between_fn (const double x[3], const double t, void *fn_data);
 
+double              t8dg_smooth_indicator3D_boundary_x_fn (const double x[3], const double t, void *fn_data);
+
 double              t8dg_smooth_g (const double x);
 
 T8DG_EXTERN_C_END ();
