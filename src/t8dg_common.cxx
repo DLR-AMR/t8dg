@@ -436,16 +436,14 @@ t8dg_williamson_etal_cosine_bell_fn (const double x[3], const double t, void *fn
    *    - Transform z coordinate of cube \in [0,1] to altitude via interpolation
    *    - To do so, transform min and max pressure to max and min altitude
    *    - Build up an 'ellipse' in z direction shrank by a (arbitrary) factor
-   * */
+   */
+  /* Calculations are done in km as well as all length values */
 
   /* Earth constants  */
-  const double        a = 6371220;
-  const double        g = 9.80616;
+  const double        a = 6371.220;
   const double        radius = a / 3;
-  const double        shrinking_factor_z = radius;
+  const double        shrinking_factor_z = 30 * radius;
   /* Initial values  */
-
-//  const double        center[3] = {1.5*M_PI, 0, 40000}; /* last value needs to be set/thought of */
   const int           h_0 = 1;
   double              x_globe[3] = { 0, 0, 0 }; /* needs to be set, transform input x */
 
@@ -455,23 +453,21 @@ t8dg_williamson_etal_cosine_bell_fn (const double x[3], const double t, void *fn
 
   /* Found in (arbitrary) output file on JUWELS */
   /* For calculation/interpolation of altitude max and min value Pressure levels: 1013.25, 878.364 ... 0.191952 hPa */
-  double              pressure_max = 1031.25;
+  double              pressure_max = 1013.25;
   double              pressure_min = 0.191952;
-  double              altitude_min_in_m = Z (pressure_max) * 1000.;
-  double              altitude_max_in_m = Z (pressure_min) * 1000.;
+  double              altitude_min_in_km = Z (pressure_max);
+  double              altitude_max_in_km = Z (pressure_min);
+  double              altitude_middle_in_km = (altitude_max_in_km + altitude_min_in_km) * 0.5;
 
-  /* Used to place center at 0.5  */
-  double              altitude_middle_in_m = Z ((pressure_max + pressure_min) * 0.5) * 1000.;
-  //(altitude_max_in_m + altitude_min_in_m) * 0.5;
-
-  /* x=1.5*M_PI and z=40000 before ; shifted to (0.5,0.5,0.5) on cube */
-  const double        center[3] = { 0., 0., altitude_middle_in_m };
+  /* The paper gives (3/2*pi, 0) as 2D center. We set it to (0.5,0.5,0.5) on cube. */
+  /* Lon and lat needs to be set to 0 to place center in the middle of cube. */
+  const double        center[3] = { 0., 0., altitude_middle_in_km };
 
   /* Great circle distance between input (transformed to globe) and center */
   double              r = a * acos (sin (center[1]) * sin (x_globe[1]) + cos (center[1]) * cos (x_globe[1]) * cos (center[0] - x_globe[0]));
 
-  /* Convert altitude in cube to x_globe[2] in m via scaling with pressure_min and pressure_max */
-  x_globe[2] = Z ((1 - x[2]) * pressure_max + x[2] * pressure_min) * 1000.;
+  /* Convert altitude in cube to x_globe[2] [km] via scaling. */
+  x_globe[2] = (1 - x[2]) * altitude_min_in_km + x[2] * altitude_max_in_km;
 
   double              z_dist = fabs (x_globe[2] - center[2]);
 
