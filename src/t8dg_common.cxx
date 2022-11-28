@@ -316,10 +316,10 @@ t8dg_smooth_indicator3D_bottom_fn (const double x[3], const double t, void *fn_d
   double              radius = 1. / (2 * 360);
   double              smoothing_factor = 40;
   double              speed_in_kmph = 1.0;      //TODO: Read out of windfile
-  double              max_altitude_in_km = 60.0;//TODO: Read out of windfile
-  double              center_z = 0.1 + (speed_in_kmph*t)/max_altitude_in_km;
+  double              max_altitude_in_km = 60.0;        //TODO: Read out of windfile
+  double              center_z = 0.1 + (speed_in_kmph * t) / max_altitude_in_km;
 
-  double              center[3] = { 0.5, 0.5, center_z};
+  double              center[3] = { 0.5, 0.5, center_z };
   double              dist = t8_vec_dist (x, center);
   if (dist < radius)
     return 1;
@@ -371,7 +371,7 @@ t8dg_smooth_indicator3D_4Spheres_between_fn (const double x[3], const double t, 
   double              center[3] = { 0.125, 0.5, 0.5 };
   /* Array for x coordinates of different center for spheres */
   /* Center x=0 and x=1 coincide because of periodic boundaries */
-  double              center_x[4] = { 0.125, 0.375, 0.625, 0.875};
+  double              center_x[4] = { 0.125, 0.375, 0.625, 0.875 };
   int                 center_x_len = sizeof (center_x) / sizeof (double);
 
   double              dist;
