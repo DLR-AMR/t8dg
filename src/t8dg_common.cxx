@@ -315,7 +315,11 @@ t8dg_smooth_indicator3D_bottom_fn (const double x[3], const double t, void *fn_d
 {
   double              radius = 1. / (2 * 360);
   double              smoothing_factor = 40;
-  double              center[3] = { 0.5, 0.5, 0.1 };
+  double              speed_in_kmph = 1.0;      //TODO: Read out of windfile
+  double              max_altitude_in_km = 60.0;//TODO: Read out of windfile
+  double              center_z = 0.1 + (speed_in_kmph*t)/max_altitude_in_km;
+
+  double              center[3] = { 0.5, 0.5, center_z};
   double              dist = t8_vec_dist (x, center);
   if (dist < radius)
     return 1;
