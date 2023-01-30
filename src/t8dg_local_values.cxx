@@ -90,6 +90,29 @@ t8dg_local_values_get_element_trafo_quad_weights_view (const t8dg_local_values_t
   return t8dg_quad_values_new_element_quad_values_view (values->element_trafo_quad_weight, itree, ielement);
 }
 
+double              t8dg_local_values_get_individual_dof (t8dg_local_values_t * local_values, t8dg_element_dof_values_t *element_dofs, int *indices)
+{
+  t8dg_functionbasis_t *functionbasis;
+  int *num_dofs_per_dim;
+  int idim;
+  int element_dof_idx;
+  
+  functionbasis = t8dg_global_values_get_functionbasis(local_values->global_values);
+  T8DG_ALLOC_ZERO(num_dofs_per_dim, local_values->dim);
+  t8dg_functionbasis_get_num_directional_dof(functionbasis, num_dofs_per_dim);
+  for (idim = 0; idim < local_values->dim; idim++){
+    T8DG_ASSERT(0 <= indices[idim] && indices[idim] <= num_dofs_per_dim[idim];
+  }
+  element_dof_idx = 0;
+  for (idim = 0; idim < local_values->dim; idim++){
+    element_dof_idx *= num_dofs_per_dim[idim];
+    element_dof_idx += indices[idim];
+  }
+  T8DG_FREE(num_dofs_per_dim);
+  return t8dg_element_dof_values_get_value(element_dofs, element_dof_idx);
+}
+
+
 void
 t8dg_local_values_set_transformed_gradient_tangential_vector (const t8dg_local_values_t * values,
                                                               const t8_locidx_t itree, const t8_locidx_t ielement, const int iquad,

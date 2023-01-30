@@ -42,6 +42,8 @@ void                t8dg_local_values_set_all_ghost_elements (t8dg_local_values_
 
 void                t8dg_local_values_set_ghost_element (t8dg_local_values_t * local_values, t8_locidx_t ighosttree, t8_locidx_t ielement);
 
+double              t8dg_local_values_get_individual_dof (t8dg_local_values_t * local_values, t8dg_element_dof_values_t *element_dofs, int *indices);
+
 /* Operations on quad_values */
 
 void                t8dg_local_values_element_multiply_trafo_quad_weight

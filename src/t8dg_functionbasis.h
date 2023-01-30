@@ -67,6 +67,9 @@ t8dg_functionbasis_type_t t8dg_functionbasis_get_type (const t8dg_functionbasis_
 
 int                 t8dg_functionbasis_get_num_dof (const t8dg_functionbasis_t * functionbasis);
 
+/* num_dofs_per_dim needs to be allocated with dim entries*/
+void                t8dg_functionbasis_get_num_directional_dof (const t8dg_functionbasis_t *functionbasis, int* num_dofs_per_dim);
+
 int                 t8dg_functionbasis_get_dim (const t8dg_functionbasis_t * functionbasis);
 
 int                 t8dg_functionbasis_get_num_children (t8dg_functionbasis_t * functionbasis);

@@ -797,6 +797,20 @@ t8dg_functionbasis_get_num_dof (const t8dg_functionbasis_t * functionbasis)
   return functionbasis->number_of_dof;
 }
 
+void                t8dg_functionbasis_get_num_directional_dof (const t8dg_functionbasis_t *functionbasis, int* num_dofs_per_dim){
+  if (!functionbasis->tensor){
+    num_dofs_per_dim[0] = functionbasis->number_of_dof;
+    return;
+  }
+
+  t8dg_functionbasis_tensor_data_t *tensor_data;
+  int dim_first;
+  tensor_data = (t8dg_functionbasis_tensor_data_t *) functionbasis->data;
+  dim_first = t8dg_functionbasis_get_dim(functionbasis);
+  t8dg_functionbasis_get_num_directional_dof (tensor_data->tensor_first_functionbasis, num_dofs_per_dim);
+  t8dg_functionbasis_get_num_directional_dof (tensor_data->tensor_second_functionbasis, num_dofs_per_dim + dim_first);
+}
+
 t8dg_functionbasis_type_t
 t8dg_functionbasis_get_type (const t8dg_functionbasis_t * functionbasis)
 {
