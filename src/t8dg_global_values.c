@@ -86,6 +86,30 @@ t8dg_global_values_transform_element_dof_to_child_dof (const t8dg_global_values_
 
 /*Getter*/
 
+double              t8dg_global_values_get_individual_dof (t8dg_global_values_t * global_values, t8dg_element_dof_values_t *element_dofs, int *indices)
+{
+  t8dg_functionbasis_t *functionbasis;
+  int *num_dofs_per_dim;
+  int idim;
+  int element_dof_idx;
+  int dim;
+
+  dim = t8dg_global_values_get_dim(global_values);
+  functionbasis = t8dg_global_values_get_functionbasis(global_values);
+  num_dofs_per_dim = T8DG_ALLOC(int, dim);
+  t8dg_functionbasis_get_num_directional_dof(functionbasis, num_dofs_per_dim);
+  for (idim = 0; idim < dim; idim++){
+    T8DG_ASSERT(0 <= indices[idim] && indices[idim] <= num_dofs_per_dim[idim]);
+  }
+  element_dof_idx = 0;
+  for (idim = 0; idim < dim; idim++){
+    element_dof_idx *= num_dofs_per_dim[idim];
+    element_dof_idx += indices[idim];
+  }
+  T8DG_FREE(num_dofs_per_dim);
+  return t8dg_element_dof_values_get_value(element_dofs, element_dof_idx);
+}
+
 int
 t8dg_global_values_get_max_num_facevalues (const t8dg_global_values_t * global_values)
 {

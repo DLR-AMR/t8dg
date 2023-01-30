@@ -74,6 +74,7 @@ int                 t8dg_global_values_array_get_max_num_element_quad (t8dg_glob
 int                 t8dg_global_values_array_get_max_num_element_dof (t8dg_global_values_t ** global_values_array);
 int                 t8dg_global_values_array_get_max_num_face_quad (t8dg_global_values_t ** global_values_array);
 int                 t8dg_global_values_array_get_max_num_face_dof (t8dg_global_values_t ** global_values_array);
+double              t8dg_global_values_get_individual_dof (t8dg_global_values_t * global_values, t8dg_element_dof_values_t *element_dofs, int *indices);
 
 t8dg_global_values_t *t8dg_global_values_array_get_global_values (t8dg_global_values_t ** global_values_array, t8_forest_t forest,
                                                                   t8_locidx_t itree, t8_locidx_t ielement);
