@@ -25,7 +25,9 @@ t8dg_adapt_fn_arg (int adapt_arg)
   case 4:
     return t8dg_adapt_mptrac_hypercube;
     break;
-
+  case 5:
+    return t8dg_adapt_indicator_loehner;
+    break;
   default:
     T8DG_ABORT ("Wrong adapt fn arg");
     break;
@@ -494,5 +496,332 @@ t8dg_adapt_multigrid_coarsen_finest_level (t8_forest_t forest,
   }
 
   /* In case the element should not be coarsened and stays the same */
+  return 0;
+}
+
+double t8dg_indicator_loehner (double value_node_minus_1, double value_node_0, double value_node_plus_1)
+{ 
+  double epsilon = 0.2;
+  
+  double numerator;
+  double denominator;
+  double threshold_zero = 1e-10; //Be careful: Not invariant under scaling of value
+
+  double indicator_loehner = 0;
+
+  //if ( fabs (value_node_minus_1) > threshold_zero || fabs (value_node_0) > threshold_zero || fabs (value_node_plus_1) > threshold_zero) {
+    numerator = fabs (value_node_plus_1 - 2*value_node_0 + value_node_minus_1);
+
+    denominator = fabs (value_node_plus_1 - value_node_0) + fabs (value_node_0 - value_node_minus_1);
+    denominator += epsilon * (fabs (value_node_plus_1) + 2*fabs (value_node_0) + fabs (value_node_minus_1));
+
+    indicator_loehner = numerator/denominator;
+  //}
+  return indicator_loehner;
+}
+
+
+double t8dg_indicator_loehner_element_3D (int *num_dofs_per_dim, t8dg_global_values_t *global_values, t8dg_element_dof_values_t *element_dof)
+{ 
+  // Dimension given via Switch construction
+  int *indices;
+  indices = T8DG_ALLOC(int, 3);
+
+  double value_node_0;
+  double value_node_minus_1;
+  double value_node_plus_1;
+
+  double indicator_loehner = 0;
+  double indicator_loehner_node;
+
+  // Indicator for nodes in x direction
+  for (int idx_x = 1; idx_x < num_dofs_per_dim[0]-1; idx_x++){
+    for (int idx_y = 0; idx_y < num_dofs_per_dim[1]; idx_y++){
+      for (int idx_z = 0; idx_z < num_dofs_per_dim[2]; idx_z++){
+
+        // Get value at node [x,y,z]
+        indices[0] = idx_x;
+        indices[1] = idx_y;
+        indices[2] = idx_z;
+        value_node_0 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+  
+        // Get value at node [x-1,y,z]
+        indices[0] = idx_x-1;
+        value_node_minus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+        // Get value at node [x+1,y,z]
+        indices[0] = idx_x+1;
+        value_node_plus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+        indicator_loehner_node = t8dg_indicator_loehner (value_node_minus_1, value_node_0, value_node_plus_1);
+
+        if (indicator_loehner_node > indicator_loehner) {
+          indicator_loehner = indicator_loehner_node;
+        }
+      }
+    }
+  }
+
+  // Indicator for nodes in y direction
+  for (int idx_x = 0; idx_x < num_dofs_per_dim[0]; idx_x++){
+    for (int idx_y = 1; idx_y < num_dofs_per_dim[1]-1; idx_y++){
+      for (int idx_z = 0; idx_z < num_dofs_per_dim[2]; idx_z++){
+
+        // Get value at node [x,y,z]
+        indices[0] = idx_x;
+        indices[1] = idx_y;
+        indices[2] = idx_z;
+        value_node_0 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+        // Get value at node [x,y-1,z]
+        indices[1] = idx_y-1;
+        value_node_minus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+        
+        // Get value at node [x,y+1,z]
+        indices[1] = idx_y+1;
+        value_node_plus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+        indicator_loehner_node = t8dg_indicator_loehner (value_node_minus_1, value_node_0, value_node_plus_1);
+
+        if (indicator_loehner_node > indicator_loehner) {
+          indicator_loehner = indicator_loehner_node;
+        }
+      }
+    }
+  }
+  
+  for (int idx_x = 0; idx_x < num_dofs_per_dim[0]; idx_x++){
+    for (int idx_y = 0; idx_y < num_dofs_per_dim[1]; idx_y++){
+      for (int idx_z = 1; idx_z < num_dofs_per_dim[2]-1; idx_z++){
+
+        // Get value at node [x,y,z]
+        indices[0] = idx_x;
+        indices[1] = idx_y;
+        indices[2] = idx_z;
+        value_node_0 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+        // Get value at node [x,y,z-1]
+        indices[2] = idx_z-1;
+        value_node_minus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+        
+        // Get value at node [x,y,z+1]
+        indices[2] = idx_z+1;
+        value_node_plus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+        if (indicator_loehner_node > indicator_loehner) {
+          indicator_loehner = indicator_loehner_node;
+        }
+      }
+    }
+  }
+  T8DG_FREE(indices);
+  return indicator_loehner;
+}
+
+double t8dg_indicator_loehner_element_2D (int *num_dofs_per_dim, t8dg_global_values_t *global_values, t8dg_element_dof_values_t *element_dof)
+{ 
+  // Dimension given via Switch construction
+  int *indices;
+  indices = T8DG_ALLOC(int, 2);
+
+  double value_node_0;
+  double value_node_minus_1;
+  double value_node_plus_1;
+
+  double indicator_loehner = 0;
+  double indicator_loehner_node;
+
+  // Indicator for nodes in x direction
+  for (int idx_x = 1; idx_x < num_dofs_per_dim[0]-1; idx_x++){
+    for (int idx_y = 0; idx_y < num_dofs_per_dim[1]; idx_y++){
+
+      // Get value at node [x,y]
+      indices[0] = idx_x;
+      indices[1] = idx_y;
+      value_node_0 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+      // Get value at node [x-1,y]
+      indices[0] = idx_x-1;
+      value_node_minus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+      // Get value at node [x+1,y]
+      indices[0] = idx_x+1;
+      value_node_plus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+      indicator_loehner_node = t8dg_indicator_loehner (value_node_minus_1, value_node_0, value_node_plus_1);
+
+      if (indicator_loehner_node > indicator_loehner) {
+        indicator_loehner = indicator_loehner_node;
+      }
+    }
+  }
+
+  // Indicator for nodes in y direction
+  for (int idx_x = 0; idx_x < num_dofs_per_dim[0]; idx_x++){
+    for (int idx_y = 1; idx_y < num_dofs_per_dim[1]-1; idx_y++){
+
+      // Get value at node [x,y]
+      indices[0] = idx_x;
+      indices[1] = idx_y;
+      value_node_0 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+      // Get value at node [x,y-1]
+      indices[1] = idx_y-1;
+      value_node_minus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+      
+      // Get value at node [x,y+1]
+      indices[1] = idx_y+1;
+      value_node_plus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+      indicator_loehner_node = t8dg_indicator_loehner (value_node_minus_1, value_node_0, value_node_plus_1);
+
+      if (indicator_loehner_node > indicator_loehner) {
+        indicator_loehner = indicator_loehner_node;
+      }
+    }
+  }
+
+  T8DG_FREE(indices);
+  return indicator_loehner;
+}
+
+double t8dg_indicator_loehner_element_1D (int *num_dofs_per_dim, t8dg_global_values_t *global_values, t8dg_element_dof_values_t *element_dof)
+{ 
+  // Dimension given via Switch construction
+  int *indices;
+  indices = T8DG_ALLOC(int, 1);
+
+  double value_node_0;
+  double value_node_minus_1;
+  double value_node_plus_1;
+
+  double indicator_loehner = 0;
+  double indicator_loehner_node;
+
+  // Indicator for nodes in x direction
+  for (int idx_x = 1; idx_x < num_dofs_per_dim[0]-1; idx_x++){
+
+    // Get value at node [x]
+    indices[0] = idx_x;
+    value_node_0 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+    // Get value at node [x-1]
+    indices[0] = idx_x-1;
+    value_node_minus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+    // Get value at node [x+1]
+    indices[0] = idx_x+1;
+    value_node_plus_1 = t8dg_global_values_get_individual_dof (global_values, element_dof, indices);
+
+    indicator_loehner_node = t8dg_indicator_loehner (value_node_minus_1, value_node_0, value_node_plus_1);
+
+    if (indicator_loehner_node > indicator_loehner) {
+      indicator_loehner = indicator_loehner_node;
+    }
+  }
+
+  T8DG_FREE(indices);
+  return indicator_loehner;
+}
+
+double t8dg_indicator_loehner_element (t8dg_global_values_t *global_values, t8dg_element_dof_values_t *element_dof)
+{
+  double indicator_loehner = 0;
+  t8dg_functionbasis_t *functionbasis;
+  int *num_dofs_per_dim;
+
+  int dim = t8dg_global_values_get_dim(global_values);
+
+  functionbasis = t8dg_global_values_get_functionbasis(global_values);
+  num_dofs_per_dim = T8DG_ALLOC(int, dim);
+  t8dg_functionbasis_get_num_directional_dof(functionbasis, num_dofs_per_dim);
+
+  // Call indicator calculating via switch due to different loop structures
+  // Within the logical part in those methods, the actual calcuting method is used
+  switch (dim) {
+  case 1:
+    indicator_loehner = t8dg_indicator_loehner_element_1D (num_dofs_per_dim, global_values, element_dof);
+    break;
+  case 2:
+    indicator_loehner = t8dg_indicator_loehner_element_2D (num_dofs_per_dim, global_values, element_dof);
+    break;
+  case 3:
+    indicator_loehner = t8dg_indicator_loehner_element_3D (num_dofs_per_dim, global_values, element_dof);
+    break;
+  default:
+    T8DG_ABORT ("Wrong dimension.");
+  }
+
+  T8DG_FREE(num_dofs_per_dim);
+  return indicator_loehner;
+}
+
+int
+t8dg_adapt_indicator_loehner (t8_forest_t forest,
+                 t8_forest_t forest_from,
+                 t8_locidx_t itree, t8_locidx_t ielement, t8_eclass_scheme_c * ts, int num_elements, t8_element_t * elements[])
+{
+  t8dg_adapt_data_t  *adapt_data;
+  sc_array_t         *element_dof;
+  int                 level;
+  double              indicator_loehner;
+  int                 ifamilyelement;
+
+  adapt_data = (t8dg_adapt_data_t *) t8_forest_get_user_data (forest);
+  level = ts->t8_element_level (elements[0]);
+
+  double              refinement_threshold = adapt_data->refinement_threshold;
+  double              coarsening_threshold = adapt_data->coarsening_threshold;
+
+  if (level == adapt_data->maximum_refinement_level && num_elements == 1) {
+    /* It is not possible to refine this level */
+    return 0;
+  }
+
+  element_dof = t8dg_dof_values_new_element_dof_values_view (adapt_data->dof_values, itree, ielement);
+
+  T8DG_ASSERT(element_dof->elem_count >= 3);
+
+  t8dg_values_t *dg_values = adapt_data->dg_values;
+  t8dg_global_values_t *global_values = t8dg_values_get_global_values (dg_values, itree, ielement);
+
+  indicator_loehner = t8dg_indicator_loehner_element (global_values, element_dof);
+
+  sc_array_destroy (element_dof);
+
+  if (level < adapt_data->maximum_refinement_level) {
+
+    if (indicator_loehner > refinement_threshold) {
+      return 1;
+    }
+    if (adapt_data->source_sink_fn != NULL) {
+      //Check source and sink function
+      double              max_value, min_value;
+      max_value = t8dg_dof_values_get_max_value (adapt_data->source_sink_dof, itree, ielement);
+      min_value = t8dg_dof_values_get_min_value (adapt_data->source_sink_dof, itree, ielement);
+      if (min_value != 0 || max_value != 0) {
+        return 1;
+      }
+    }
+  }
+
+  if (num_elements > 1) {
+    if (level == adapt_data->minimum_refinement_level) {
+      return 0;                 /* It is not possible to coarsen this element. If this is wanted, balance is needed outside */
+    }
+
+    for (ifamilyelement = 0; ifamilyelement < num_elements; ifamilyelement++) {
+
+      element_dof = t8dg_dof_values_new_element_dof_values_view (adapt_data->dof_values, itree, ielement + ifamilyelement);
+      
+      indicator_loehner = t8dg_indicator_loehner_element (global_values, element_dof);
+
+      sc_array_destroy (element_dof);
+
+      if (indicator_loehner > coarsening_threshold) {
+        return 0;
+      }
+    }
+    return -1;
+  }
   return 0;
 }

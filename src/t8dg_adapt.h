@@ -76,6 +76,20 @@ int t8dg_adapt_mptrac_hypercube (t8_forest_t forest,
                              t8_locidx_t itree, t8_locidx_t ielement, t8_eclass_scheme_c * ts, int num_elements,
                              t8_element_t * elements[]);
 
+int t8dg_adapt_indicator_loehner (t8_forest_t forest,
+                                t8_forest_t forest_from,
+                                t8_locidx_t itree, t8_locidx_t ielement, t8_eclass_scheme_c * ts, int num_elements, t8_element_t * elements[]);
+
+double t8dg_indicator_loehner_element_3D (int *num_dofs_per_dim, t8dg_global_values_t *global_values, t8dg_element_dof_values_t *element_dof);
+
+double t8dg_indicator_loehner_element_2D (int *num_dofs_per_dim, t8dg_global_values_t *global_values, t8dg_element_dof_values_t *element_dof);
+
+double t8dg_indicator_loehner_element_1D (int *num_dofs_per_dim, t8dg_global_values_t *global_values, t8dg_element_dof_values_t *element_dof);
+
+double t8dg_indicator_loehner_element (t8dg_global_values_t *global_values, t8dg_element_dof_values_t *element_dof);
+
+double t8dg_indicator_loehner (double value_node_minus_1, double value_node_0, double value_node_plus_1);
+
 int t8dg_adapt_multigrid_coarsen_finest_level (t8_forest_t forest,
                                            t8_forest_t forest_from,
                                            t8_locidx_t itree, t8_locidx_t lelement_id, t8_eclass_scheme_c * ts, int num_elements,

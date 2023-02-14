@@ -83,7 +83,7 @@ t8dg_check_options (int icmesh, const char *mshfile_prefix, int mshfile_dim, int
     t8_global_errorf ("Argument error. Invalid adapt frequency.\n");
     return 0;
   }
-  if (!(adapt_arg >= 0 && adapt_arg <= 4)) {
+  if (!(adapt_arg >= 0 && adapt_arg <= 5)) {
     t8_global_errorf ("Argument error. Invalid adapt function.\n");
     return 0;
   }
@@ -119,6 +119,10 @@ t8dg_check_options (int icmesh, const char *mshfile_prefix, int mshfile_dim, int
     return 0;
   }
 
+  if (adapt_arg == 5 && number_LGL_points < 3) {
+    t8dg_global_errorf ("Argument error. If Loehner indicator is used, there are 3 or more LGL nodes per dimension needed.\n");
+    return 0;
+  }
 #if T8_WITH_PETSC
   if (!(0 <= preconditioner_selection && preconditioner_selection <= 4)) {
     t8_global_errorf ("Argument error. Invalid preconditioner.\n");
