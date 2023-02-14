@@ -102,7 +102,7 @@ double              t8dg_global_values_get_individual_dof (t8dg_global_values_t 
     T8DG_ASSERT(0 <= indices[idim] && indices[idim] <= num_dofs_per_dim[idim]);
   }
   element_dof_idx = 0;
-  for (idim = 0; idim < dim; idim++){
+  for (idim = dim-1; 0 <= idim ; idim--){
     element_dof_idx *= num_dofs_per_dim[idim];
     element_dof_idx += indices[idim];
   }

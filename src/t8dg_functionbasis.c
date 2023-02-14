@@ -806,7 +806,7 @@ void                t8dg_functionbasis_get_num_directional_dof (const t8dg_funct
   t8dg_functionbasis_tensor_data_t *tensor_data;
   int dim_first;
   tensor_data = (t8dg_functionbasis_tensor_data_t *) functionbasis->data;
-  dim_first = t8dg_functionbasis_get_dim(functionbasis);
+  dim_first = t8dg_functionbasis_get_dim(tensor_data->tensor_first_functionbasis);
   t8dg_functionbasis_get_num_directional_dof (tensor_data->tensor_first_functionbasis, num_dofs_per_dim);
   t8dg_functionbasis_get_num_directional_dof (tensor_data->tensor_second_functionbasis, num_dofs_per_dim + dim_first);
 }
