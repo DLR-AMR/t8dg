@@ -22,7 +22,8 @@ t8dg_check_options (int icmesh, const char *mshfile_prefix, int mshfile_dim, int
                     int uniform_level, int max_level, int min_level,
                     int number_LGL_points, double start_time, double end_time, double cfl, double delta_t, int time_steps, int time_order,
                     int vtk_freq, int adapt_freq, int adapt_arg, double diffusion_coefficient, int numerical_flux_arg, int source_sink_arg,
-                    int use_implicit_timestepping, int preconditioner_selection, int multigrid_levels)
+                    int use_implicit_timestepping, int preconditioner_selection, int multigrid_levels, double refinement_threshold,
+                    double coarsening_threshold)
 {
   if (!(icmesh >= 0 && icmesh <= 12))
     return 0;
@@ -107,6 +108,17 @@ t8dg_check_options (int icmesh, const char *mshfile_prefix, int mshfile_dim, int
     t8_global_errorf ("Argument error. MPTRAC use case must use -s2\n");
     return 0;
   }
+
+  if (refinement_threshold <=0 || coarsening_threshold <=0) {
+    t8_global_errorf ("Argument error. Used thresholds for AMR indicator must be positive.\n");
+    return 0;
+  }
+
+  if (refinement_threshold <= coarsening_threshold) {
+    t8_global_errorf ("Argument error. Refinement thresholds for AMR indicator must be larger than coarsening threhold.\n");
+    return 0;
+  }
+
 #if T8_WITH_PETSC
   if (!(0 <= preconditioner_selection && preconditioner_selection <= 4)) {
     t8_global_errorf ("Argument error. Invalid preconditioner.\n");
@@ -152,6 +164,8 @@ main (int argc, char *argv[])
   int                 numerical_flux_arg;
   int                 time_steps;
   int                 refine_error;
+  double              refinement_threshold;
+  double              coarsening_threshold;
 #if T8_WITH_PETSC
   PetscErrorCode      ierr;
 #endif
@@ -255,6 +269,9 @@ main (int argc, char *argv[])
 
   sc_options_add_switch (opt, 'E', "refine_error", &refine_error, "Refines the grid before calculating the errors");
 
+  sc_options_add_double (opt, 'x', "refinement_threshold", &refinement_threshold, 0.001, "Choose threshold for AMR indicator (refinement), currently only used for Loehner indicator. Default: 0.001");
+  sc_options_add_double (opt, 'X', "coarsening_threshold", &coarsening_threshold, 0.00025, "Choose threshold for AMR indicator (coarsening), currently only used for Loehner indicator. Default: 0.00025");
+
   parsed = sc_options_parse (t8dg_get_package_id (), SC_LP_ERROR, opt, argc, argv);
   if (max_level == -1)
     max_level = uniform_level;
@@ -269,13 +286,13 @@ main (int argc, char *argv[])
   else if (parsed >= 0 && t8dg_check_options (icmesh, mshfile_prefix, mshfile_dim, initial_cond_arg, uniform_level, max_level, min_level, number_LGL_points,
                                               start_time, end_time, cfl, delta_t, time_steps, time_order, vtk_freq, adapt_freq, adapt_arg,
                                               diffusion_coefficient, numerical_flux_arg, source_sink_arg, use_implicit_timestepping,
-                                              preconditioner_selection, multigrid_levels)) {
+                                              preconditioner_selection, multigrid_levels, refinement_threshold, coarsening_threshold)) {
     t8dg_linear_advection_diffusion_problem_t *problem;
     problem =
       t8dg_advect_diff_problem_init_arguments (icmesh, mshfile_prefix, mshfile_dim, uniform_level, number_LGL_points, initial_cond_arg, flow_velocity,
                                                diffusion_coefficient, start_time, end_time, cfl, delta_t, time_steps, time_order,
-                                               use_implicit_timestepping, preconditioner_selection, multigrid_levels, min_level, max_level,
-                                               adapt_arg, adapt_freq, prefix, vtk_freq, numerical_flux_arg, source_sink_arg, refine_error,
+                                               use_implicit_timestepping, preconditioner_selection, multigrid_levels, refinement_threshold, coarsening_threshold,
+                                               min_level, max_level, adapt_arg, adapt_freq, prefix, vtk_freq, numerical_flux_arg, source_sink_arg, refine_error,
                                                sc_MPI_COMM_WORLD);
 
     t8dg_advect_diff_solve (problem);

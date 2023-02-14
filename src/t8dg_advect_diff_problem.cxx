@@ -297,6 +297,8 @@ t8dg_advect_diff_problem_init_arguments (int icmesh,
                                          int use_implicit_timestepping,
                                          int preconditioner_selection,
                                          int multigrid_levels,
+                                         double refinement_threshold,
+                                         double coarsening_threshold,
                                          int min_level,
                                          int max_level,
                                          int adapt_arg,
@@ -334,7 +336,7 @@ t8dg_advect_diff_problem_init_arguments (int icmesh,
 
   adapt_data =
     t8dg_adapt_data_new (dg_values, initial_level, min_level, max_level, adapt_arg, adapt_freq, description->source_sink_fn,
-                         description->source_sink_data);
+                         description->source_sink_data, refinement_threshold, coarsening_threshold);
 
   vtk_data = t8dg_output_vtk_data_new (prefix, vtk_freq);
   if (cfl > 0) {

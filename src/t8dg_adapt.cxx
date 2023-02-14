@@ -34,7 +34,8 @@ t8dg_adapt_fn_arg (int adapt_arg)
 
 t8dg_adapt_data_t  *
 t8dg_adapt_data_new (t8dg_values_t * dg_values, int initial_level, int min_level, int max_level, int adapt_fn_arg,
-                     int adapt_freq, t8dg_scalar_function_3d_time_fn source_sink_fn, void *source_sink_data)
+                     int adapt_freq, t8dg_scalar_function_3d_time_fn source_sink_fn, void *source_sink_data,
+                     double refinement_threshold, double coarsening_threshold)
 {
   t8dg_adapt_data_t  *adapt_data;
   adapt_data = T8DG_ALLOC_ZERO (t8dg_adapt_data_t, 1);
@@ -51,6 +52,8 @@ t8dg_adapt_data_new (t8dg_values_t * dg_values, int initial_level, int min_level
   adapt_data->source_sink_fn = source_sink_fn;
   adapt_data->source_sink_data = source_sink_data;
   adapt_data->dim = t8dg_values_get_dim (dg_values);
+  adapt_data->refinement_threshold = refinement_threshold;
+  adapt_data->coarsening_threshold = coarsening_threshold;
   return adapt_data;
 }
 

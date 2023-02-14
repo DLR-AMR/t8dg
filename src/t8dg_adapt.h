@@ -28,12 +28,15 @@ typedef struct t8dg_adapt_data
   double              time;
   int                 dim;
   int                 adapt_fn_arg;     /* needed this member for preconditioning purposes */
+  double              refinement_threshold;
+  double              coarsening_threshold;
 } t8dg_adapt_data_t;
 
 t8_forest_adapt_t   t8dg_adapt_fn_arg (int adapt_arg);
 
 t8dg_adapt_data_t  *t8dg_adapt_data_new (t8dg_values_t * dg_values, int initial_level, int min_level, int max_level, int adapt_fn_arg,
-                                         int adapt_freq, t8dg_scalar_function_3d_time_fn source_sink_fn, void *source_sink_data);
+                                          int adapt_freq, t8dg_scalar_function_3d_time_fn source_sink_fn, void *source_sink_data,
+                                          double refinement_threshold, double coarsening_threshold);
 
 void                t8dg_adapt_data_set_time (t8dg_adapt_data_t * adapt_data, double time);
 
