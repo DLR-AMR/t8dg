@@ -273,8 +273,8 @@ main (int argc, char *argv[])
 
   sc_options_add_switch (opt, 'E', "refine_error", &refine_error, "Refines the grid before calculating the errors");
 
-  sc_options_add_double (opt, 'x', "refinement_threshold", &refinement_threshold, 0.001, "Choose threshold for AMR indicator (refinement), currently only used for Loehner indicator. Default: 0.001");
-  sc_options_add_double (opt, 'X', "coarsening_threshold", &coarsening_threshold, 0.00025, "Choose threshold for AMR indicator (coarsening), currently only used for Loehner indicator. Default: 0.00025");
+  sc_options_add_double (opt, 'x', "refinement_threshold", &refinement_threshold, 0.01, "Choose threshold for AMR indicator (refinement), currently only used for Loehner indicator. Default: 0.01");
+  sc_options_add_double (opt, 'X', "coarsening_threshold", &coarsening_threshold, 0.0025, "Choose threshold for AMR indicator (coarsening), currently only used for Loehner indicator. Default: 0.0025");
 
   parsed = sc_options_parse (t8dg_get_package_id (), SC_LP_ERROR, opt, argc, argv);
   if (max_level == -1)

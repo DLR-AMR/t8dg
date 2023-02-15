@@ -505,18 +505,18 @@ double t8dg_indicator_loehner (double value_node_minus_1, double value_node_0, d
   
   double numerator;
   double denominator;
-  double threshold_zero = 1e-10; //Be careful: Not invariant under scaling of value
+  double threshold_loehner = 1e-8; //Be careful: Not invariant under scaling of value
 
-  double indicator_loehner = 0;
+  double indicator_loehner = 0.0;
 
-  //if ( fabs (value_node_minus_1) > threshold_zero || fabs (value_node_0) > threshold_zero || fabs (value_node_plus_1) > threshold_zero) {
-    numerator = fabs (value_node_plus_1 - 2*value_node_0 + value_node_minus_1);
+  if ( fabs (value_node_minus_1) > threshold_loehner || fabs (value_node_0) > threshold_loehner || fabs (value_node_plus_1) > threshold_loehner) {
+    numerator = fabs (value_node_plus_1 - 2.0*value_node_0 + value_node_minus_1);
 
     denominator = fabs (value_node_plus_1 - value_node_0) + fabs (value_node_0 - value_node_minus_1);
-    denominator += epsilon * (fabs (value_node_plus_1) + 2*fabs (value_node_0) + fabs (value_node_minus_1));
+    denominator += epsilon * (fabs (value_node_plus_1) + 2.0*fabs (value_node_0) + fabs (value_node_minus_1));
 
     indicator_loehner = numerator/denominator;
-  //}
+  }
   return indicator_loehner;
 }
 
