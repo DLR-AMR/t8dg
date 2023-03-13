@@ -23,8 +23,14 @@ t8dg_check_options (int icmesh, const char *mshfile_prefix, int mshfile_dim, int
                     int number_LGL_points, double start_time, double end_time, double cfl, double delta_t, int time_steps, int time_order,
                     int vtk_freq, int adapt_freq, int adapt_arg, double diffusion_coefficient, int numerical_flux_arg, int source_sink_arg,
                     int use_implicit_timestepping, int preconditioner_selection, int multigrid_levels, double refinement_threshold,
-                    double coarsening_threshold)
+                    double coarsening_threshold, void *init_data)
 {
+  t8dg_williamson_etal_data_t *williamson_data = (t8dg_williamson_etal_data_t *) init_data;
+
+  double inner_radius_factor = williamson_data->inner_radius_factor;
+  double ring_radius_factor = williamson_data->ring_radius_factor;
+  double weight_z_direction_factor = williamson_data->weight_z_direction_factor;
+
   if (!(icmesh >= 0 && icmesh <= 12))
     return 0;
   if (icmesh == 12 && mshfile_prefix == NULL) {
@@ -123,6 +129,16 @@ t8dg_check_options (int icmesh, const char *mshfile_prefix, int mshfile_dim, int
     t8dg_global_errorf ("Argument error. If Loehner indicator is used, there are 3 or more LGL nodes per dimension needed.\n");
     return 0;
   }
+
+  if ( (initial_cond_arg == 19) && (inner_radius_factor < 0 || ring_radius_factor < 0 || weight_z_direction_factor < 0)) {
+    t8dg_global_errorf ("Argument error. Factors used for Williamson initial condition must not be negative.\n");
+    return 0;
+  }
+
+  if ( (initial_cond_arg == 19) && (inner_radius_factor > 1 || ring_radius_factor > 1 || inner_radius_factor + ring_radius_factor > 1)) {
+    t8dg_global_errorf ("Argument error. Factors used for Williamson initial condition must not be not larger than 1 individually or added up.\n");
+    return 0;
+  }
 #if T8_WITH_PETSC
   if (!(0 <= preconditioner_selection && preconditioner_selection <= 4)) {
     t8_global_errorf ("Argument error. Invalid preconditioner.\n");
@@ -170,6 +186,9 @@ main (int argc, char *argv[])
   int                 refine_error;
   double              refinement_threshold;
   double              coarsening_threshold;
+  double              inner_radius_factor;
+  double              ring_radius_factor;
+  double              weight_z_direction_factor;
 #if T8_WITH_PETSC
   PetscErrorCode      ierr;
 #endif
@@ -276,11 +295,22 @@ main (int argc, char *argv[])
   sc_options_add_double (opt, 'x', "refinement_threshold", &refinement_threshold, 0.01, "Choose threshold for AMR indicator (refinement), currently only used for Loehner indicator. Default: 0.01");
   sc_options_add_double (opt, 'X', "coarsening_threshold", &coarsening_threshold, 0.0025, "Choose threshold for AMR indicator (coarsening), currently only used for Loehner indicator. Default: 0.0025");
 
+  /* Parameters used specifically for Williamson intial condition */
+  sc_options_add_double (opt, '\0', "inner_radius", &inner_radius_factor, 0.25, "Define inner radius used for constant initial condition, as ratio of earth radius (currently only used for Williamson initial condition). Default: 0.25");
+  sc_options_add_double (opt, '\0', "ring_radius", &ring_radius_factor, 0.25, "Define ring radius used for smoothing to 0, as ratio of earth radius (currently only used for Williamson initial condition). Default: 0.25");
+  sc_options_add_double (opt, '\0', "weight_z", &weight_z_direction_factor, 7.5, "Weightes z direction in order to create physical meaningful result; weight is multiplied by earth radius (currently only used for Williamson initial condition). Default: 7.5");
+
   parsed = sc_options_parse (t8dg_get_package_id (), SC_LP_ERROR, opt, argc, argv);
   if (max_level == -1)
     max_level = uniform_level;
   if (min_level == -1)
     min_level = uniform_level;
+
+  /* Create struct to pass parameters to Williamson initial condition */
+  t8dg_williamson_etal_data_t williamson_data;
+  williamson_data.inner_radius_factor = inner_radius_factor;
+  williamson_data.ring_radius_factor = ring_radius_factor;
+  williamson_data.weight_z_direction_factor = weight_z_direction_factor;
 
   if (helpme) {
     /* display help message and usage */
@@ -290,13 +320,14 @@ main (int argc, char *argv[])
   else if (parsed >= 0 && t8dg_check_options (icmesh, mshfile_prefix, mshfile_dim, initial_cond_arg, uniform_level, max_level, min_level, number_LGL_points,
                                               start_time, end_time, cfl, delta_t, time_steps, time_order, vtk_freq, adapt_freq, adapt_arg,
                                               diffusion_coefficient, numerical_flux_arg, source_sink_arg, use_implicit_timestepping,
-                                              preconditioner_selection, multigrid_levels, refinement_threshold, coarsening_threshold)) {
+                                              preconditioner_selection, multigrid_levels, refinement_threshold, coarsening_threshold, &williamson_data)) {
     t8dg_linear_advection_diffusion_problem_t *problem;
     problem =
       t8dg_advect_diff_problem_init_arguments (icmesh, mshfile_prefix, mshfile_dim, uniform_level, number_LGL_points, initial_cond_arg, flow_velocity,
                                                diffusion_coefficient, start_time, end_time, cfl, delta_t, time_steps, time_order,
                                                use_implicit_timestepping, preconditioner_selection, multigrid_levels, refinement_threshold, coarsening_threshold,
-                                               min_level, max_level, adapt_arg, adapt_freq, prefix, vtk_freq, numerical_flux_arg, source_sink_arg, refine_error,
+                                               &williamson_data, min_level, max_level, adapt_arg, adapt_freq, prefix, vtk_freq, numerical_flux_arg,
+                                               source_sink_arg, refine_error,
                                                sc_MPI_COMM_WORLD);
 
     t8dg_advect_diff_solve (problem);

@@ -16,6 +16,13 @@ typedef struct t8dg_scalar3d_cos_product_data
   double              diffusion_coefficient;
 } t8dg_scalar3d_cos_product_data_t;
 
+typedef struct t8dg_williamson_etal_data
+{
+  double              inner_radius_factor;
+  double              ring_radius_factor;
+  double              weight_z_direction_factor;
+} t8dg_williamson_etal_data_t;
+
 T8DG_EXTERN_C_BEGIN ();
 
 t8dg_scalar_function_3d_time_fn t8dg_common_initial_cond_fn (int initial_cond_arg);

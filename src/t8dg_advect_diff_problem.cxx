@@ -144,7 +144,7 @@ t8dg_advect_diff_problem_accumulate_stat (t8dg_linear_advection_diffusion_proble
 
 static t8dg_linear_advection_diffusion_problem_description_t *
 t8dg_advect_diff_problem_description_new (int initial_cond_arg, t8dg_flow_type_t velocity_field_type, double flow_velocity, double diffusion_coefficient,
-                                          int numerical_flux_arg, int source_sink_arg, int dim,
+                                          int numerical_flux_arg, int source_sink_arg, int dim, t8dg_williamson_etal_data_t *williamson_data,
                                           sc_MPI_Comm comm)
 {
   t8dg_linear_advection_diffusion_problem_description_t *description;
@@ -164,6 +164,12 @@ t8dg_advect_diff_problem_description_new (int initial_cond_arg, t8dg_flow_type_t
     init_data->dim = dim;
     description->initial_condition_data = init_data;
   }
+
+  if (description->analytical_sol_fn == t8dg_williamson_etal_cosine_bell_fn) {
+    description->analytical_sol_data = williamson_data;
+    description->initial_condition_data = williamson_data;
+  }
+
   t8dg_flux_data_base *flux_data;
   description->numerical_flux_advection = t8dg_linear_numerical_flux3D_lax_friedrich_fn;
   description->numerical_flux_advection_data = T8DG_ALLOC (double, 1);
@@ -299,6 +305,7 @@ t8dg_advect_diff_problem_init_arguments (int icmesh,
                                          int multigrid_levels,
                                          double refinement_threshold,
                                          double coarsening_threshold,
+                                         t8dg_williamson_etal_data_t *williamson_data,
                                          int min_level,
                                          int max_level,
                                          int adapt_arg,
@@ -330,7 +337,7 @@ t8dg_advect_diff_problem_init_arguments (int icmesh,
 
   description =
     t8dg_advect_diff_problem_description_new (initial_cond_arg, velocity_field_type, flow_speed, diffusion_coefficient, numerical_flux_arg,
-                                              source_sink_arg, dim, comm);
+                                              source_sink_arg, dim, williamson_data, comm);
 
   dg_values = t8dg_values_new_LGL_hypercube (dim, number_LGL_points, coarse_geometry, forest);
 

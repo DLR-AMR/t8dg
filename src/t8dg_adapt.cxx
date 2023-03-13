@@ -505,7 +505,7 @@ double t8dg_indicator_loehner (double value_node_minus_1, double value_node_0, d
   
   double numerator;
   double denominator;
-  double threshold_loehner = 1e-8; //Be careful: Not invariant under scaling of value
+  double threshold_loehner = 1e-4; //Be careful: Not invariant under scaling of value
 
   double indicator_loehner = 0.0;
 

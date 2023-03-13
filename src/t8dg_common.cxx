@@ -472,12 +472,21 @@ t8dg_williamson_etal_cosine_bell_fn (const double x[3], const double t, void *fn
    *    - To do so, transform min and max pressure to max and min altitude
    *    - Build up an 'ellipse' in z direction shrank by a (arbitrary) factor
    */
+
   /* Calculations are done in km as well as all length values */
+
+  t8dg_williamson_etal_data_t *williamson_data = (t8dg_williamson_etal_data_t *) fn_data;
+  double              inner_radius_factor = williamson_data->inner_radius_factor;
+  double              ring_radius_factor = williamson_data->ring_radius_factor;
+  double              weight_z_direction_factor = williamson_data->weight_z_direction_factor;
 
   /* Earth constants  */
   const double        a = 6371.220;
-  const double        radius = a / 3;
-  const double        shrinking_factor_z = 30 * radius;
+
+  double              inner_radius = inner_radius_factor * a;
+  double              ring_radius = ring_radius_factor * a;
+  const double        weight_z_direction = weight_z_direction_factor * a;
+
   /* Initial values  */
   const int           h_0 = 1;
   double              x_globe[3] = { 0, 0, 0 }; /* needs to be set, transform input x */
@@ -509,11 +518,16 @@ t8dg_williamson_etal_cosine_bell_fn (const double x[3], const double t, void *fn
   /* Value of initial function; depending on x_globe and its great circle distance */
   double              concentration = 0;
 
-  /* Ellipse around center to controll expansion in z direction; dist_z=radius overshoots the cube */
-  double              dist_pyth = sqrt (r * r + shrinking_factor_z * z_dist * z_dist);
+  /* Ellipse around center to control expansion in z direction; dist_z=radius overshoots the cube and creates unphysical initial condition */
+  /* z_dist is weighted with sqrt (weight_z_direction) */
+  double              dist = sqrt (r * r + weight_z_direction * z_dist * z_dist);
 
-  if (dist_pyth <= radius)
-    concentration = (h_0 * 0.5) * (1 + cos (M_PI * dist_pyth / radius));
+  if (dist < inner_radius)
+    return 1;
+  if (dist > ring_radius + inner_radius)
+    return 0;
 
-  return concentration;
+  dist = (dist - inner_radius) / ring_radius; /* transform to [0,1] */
+
+  return (h_0 * 0.5) * (1 + cos (M_PI * dist));
 }
