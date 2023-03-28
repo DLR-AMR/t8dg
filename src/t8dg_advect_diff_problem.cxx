@@ -145,7 +145,7 @@ t8dg_advect_diff_problem_accumulate_stat (t8dg_linear_advection_diffusion_proble
 static t8dg_linear_advection_diffusion_problem_description_t *
 t8dg_advect_diff_problem_description_new (int initial_cond_arg, t8dg_flow_type_t velocity_field_type, double flow_velocity, double diffusion_coefficient,
                                           int numerical_flux_arg, int source_sink_arg, int dim, t8dg_williamson_etal_data_t *williamson_data,
-                                          sc_MPI_Comm comm)
+                                          t8dg_windfield_file_data_t *windfield_file_data, sc_MPI_Comm comm)
 {
   t8dg_linear_advection_diffusion_problem_description_t *description;
   description = T8DG_ALLOC_ZERO (t8dg_linear_advection_diffusion_problem_description_t, 1);
@@ -199,13 +199,16 @@ t8dg_advect_diff_problem_description_new (int initial_cond_arg, t8dg_flow_type_t
     break;
 
   case T8DG_FLOW_MPTRAC_3D:
+  {
     description->velocity_field = t8dg_mptrac_flow_3D_fn;
     *(double *) description->numerical_flux_advection_data = 1;
     /* To use the mptrac flow, we need to load the nc files and initial
      * interpolation first. */
-    //flux_data = new t8dg_mptrac_flux_data ("ei_2017_01_01_00.nc", 6, comm);
-    flux_data = new t8dg_mptrac_flux_data ("wind_2017_01_01_00.nc", 6, comm);
+    int hours_between_file_reads = windfield_file_data->hours_between_file_reads;
+    const char *windfield_file_prefix = windfield_file_data->windfield_file_prefix;
+    flux_data = new t8dg_mptrac_flux_data (windfield_file_prefix, hours_between_file_reads, comm);
     break;
+  }
   default:
     T8DG_ABORT ("Invalid flow type.");
     flux_data = NULL;
@@ -306,6 +309,7 @@ t8dg_advect_diff_problem_init_arguments (int icmesh,
                                          double refinement_threshold,
                                          double coarsening_threshold,
                                          t8dg_williamson_etal_data_t *williamson_data,
+                                         t8dg_windfield_file_data_t *windfield_file_data,
                                          int min_level,
                                          int max_level,
                                          int adapt_arg,
@@ -337,7 +341,7 @@ t8dg_advect_diff_problem_init_arguments (int icmesh,
 
   description =
     t8dg_advect_diff_problem_description_new (initial_cond_arg, velocity_field_type, flow_speed, diffusion_coefficient, numerical_flux_arg,
-                                              source_sink_arg, dim, williamson_data, comm);
+                                              source_sink_arg, dim, williamson_data, windfield_file_data, comm);
 
   dg_values = t8dg_values_new_LGL_hypercube (dim, number_LGL_points, coarse_geometry, forest);
 

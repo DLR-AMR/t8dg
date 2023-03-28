@@ -109,6 +109,8 @@ class t8dg_mptrac_flux_data : public t8dg_flux_data_base
     /* How many hours to pass before a new input file is read. */
     double hours_between_file_reads;
 
+    char *mptrac_input;
+
     bool current_element_is_at_pole;
     bool current_element_is_at_top_or_bottom;
 

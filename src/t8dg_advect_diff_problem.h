@@ -59,6 +59,12 @@ typedef struct t8dg_linear_advection_diffusion_problem_description
 
 } t8dg_linear_advection_diffusion_problem_description_t;
 
+typedef struct t8dg_windfield_file_data
+{
+  const char         *windfield_file_prefix;
+  int                 hours_between_file_reads;
+} t8dg_windfield_file_data_t;
+
 t8dg_linear_advection_diffusion_problem_t *t8dg_advect_diff_problem_init_arguments (int icmesh,
                                                                                     const char *mshfile_prefix,
                                                                                     int mshfile_dim,
@@ -79,6 +85,7 @@ t8dg_linear_advection_diffusion_problem_t *t8dg_advect_diff_problem_init_argumen
                                                                                     double refinement_threshold,
                                                                                     double coarsening_threshold,
                                                                                     t8dg_williamson_etal_data_t *williamson_data,
+                                                                                    t8dg_windfield_file_data_t *windfield_file_data,
                                                                                     int min_level,
                                                                                     int max_level,
                                                                                     int adapt_arg,

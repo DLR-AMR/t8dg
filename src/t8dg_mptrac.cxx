@@ -142,8 +142,15 @@ comm (comm),
 hours_between_file_reads (hours_between_file_reads),
 point_source (0, 45, 100, 10, 10, 1)
 {
-  //const char *mptrac_input = "blub DT_MET 21600 METBASE ei MET_DX 1 MET_DY 1";
-  const char         *mptrac_input = "blub DT_MET 21600 METBASE wind MET_DX 1 MET_DY 1";
+  /*
+    Convert hours_between_file_reads from from h to sec and plug into mptrac_input.
+    Pass only the prefix of the file in nc_filename and plug into mptrac_input.
+    Chosen windfield file is only decided by mptrac_input, not directly by nc_filename.
+      -> Name in t8_mptrac_context_new does not matter.
+  */
+  mptrac_input = T8DG_ALLOC(char, 100);
+  sprintf(mptrac_input, "blub DT_MET %d METBASE %s MET_DX 1 MET_DY 1", hours_between_file_reads*3600, nc_filename);
+
   const int           dimension = 3;
   const int           uniform_level = 3;
   context = t8_mptrac_context_new (0, nc_filename, mptrac_input, dimension, uniform_level, comm);
@@ -158,6 +165,7 @@ point_source (0, 45, 100, 10, 10, 1)
 
 t8dg_mptrac_flux_data::~t8dg_mptrac_flux_data ()
 {
+  T8DG_FREE(mptrac_input);
   t8_mptrac_context_destroy (&context, comm);
 }
 

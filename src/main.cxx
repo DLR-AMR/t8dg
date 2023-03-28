@@ -189,6 +189,8 @@ main (int argc, char *argv[])
   double              inner_radius_factor;
   double              ring_radius_factor;
   double              weight_z_direction_factor;
+  int                 hours_between_file_reads;
+  const char         *windfield_file_prefix;
 #if T8_WITH_PETSC
   PetscErrorCode      ierr;
 #endif
@@ -300,6 +302,10 @@ main (int argc, char *argv[])
   sc_options_add_double (opt, '\0', "ring_radius", &ring_radius_factor, 0.25, "Define ring radius used for smoothing to 0, as ratio of earth radius (currently only used for Williamson initial condition). Default: 0.25");
   sc_options_add_double (opt, '\0', "weight_z", &weight_z_direction_factor, 7.5, "Weightes z direction in order to create physical meaningful result; weight is multiplied by earth radius (currently only used for Williamson initial condition). Default: 7.5");
 
+  /* Parameters to read windfield files when using MPTRAC*/
+  sc_options_add_int (opt, 'H', "hours_between_file_reads", &hours_between_file_reads, 6, "Time span in hours between windfield files. Default: 6. Requires option -s2.");
+  sc_options_add_string (opt, 'w', "windfield_file_prefix", &windfield_file_prefix, "wind", "Prefix of used windfield files. Default: 'wind'. Requires option -s2.");
+
   parsed = sc_options_parse (t8dg_get_package_id (), SC_LP_ERROR, opt, argc, argv);
   if (max_level == -1)
     max_level = uniform_level;
@@ -311,6 +317,11 @@ main (int argc, char *argv[])
   williamson_data.inner_radius_factor = inner_radius_factor;
   williamson_data.ring_radius_factor = ring_radius_factor;
   williamson_data.weight_z_direction_factor = weight_z_direction_factor;
+
+  /* Create struct to pass information on which windfield data to use */
+  t8dg_windfield_file_data_t windfield_file_data;
+  windfield_file_data.windfield_file_prefix = windfield_file_prefix;
+  windfield_file_data.hours_between_file_reads = hours_between_file_reads;
 
   if (helpme) {
     /* display help message and usage */
@@ -326,7 +337,7 @@ main (int argc, char *argv[])
       t8dg_advect_diff_problem_init_arguments (icmesh, mshfile_prefix, mshfile_dim, uniform_level, number_LGL_points, initial_cond_arg, flow_velocity,
                                                diffusion_coefficient, start_time, end_time, cfl, delta_t, time_steps, time_order,
                                                use_implicit_timestepping, preconditioner_selection, multigrid_levels, refinement_threshold, coarsening_threshold,
-                                               &williamson_data, min_level, max_level, adapt_arg, adapt_freq, prefix, vtk_freq, numerical_flux_arg,
+                                               &williamson_data, &windfield_file_data, min_level, max_level, adapt_arg, adapt_freq, prefix, vtk_freq, numerical_flux_arg,
                                                source_sink_arg, refine_error,
                                                sc_MPI_COMM_WORLD);
 
