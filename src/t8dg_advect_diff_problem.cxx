@@ -109,16 +109,16 @@ struct t8dg_linear_advection_diffusion_problem
 };
 
 /* Forward declaration of function below. */
-static int t8dg_advect_diff_norm_bounded (const t8dg_linear_advection_diffusion_problem_t * problem);
+static int          t8dg_advect_diff_norm_bounded (const t8dg_linear_advection_diffusion_problem_t * problem);
 
-const t8_forest_t
-t8dg_advect_diff_problem_get_forest (const t8dg_linear_advection_diffusion_problem_t *problem)
+const               t8_forest_t
+t8dg_advect_diff_problem_get_forest (const t8dg_linear_advection_diffusion_problem_t * problem)
 {
   return problem->forest;
 }
 
-const t8dg_timestepping_data_t*
-t8dg_advect_diff_problem_get_time_data (const t8dg_linear_advection_diffusion_problem_t *problem)
+const t8dg_timestepping_data_t *
+t8dg_advect_diff_problem_get_time_data (const t8dg_linear_advection_diffusion_problem_t * problem)
 {
   return problem->time_data;
 }
@@ -143,9 +143,10 @@ t8dg_advect_diff_problem_accumulate_stat (t8dg_linear_advection_diffusion_proble
 }
 
 static t8dg_linear_advection_diffusion_problem_description_t *
-t8dg_advect_diff_problem_description_new (int initial_cond_arg, t8dg_flow_type_t velocity_field_type, double flow_velocity, double diffusion_coefficient,
-                                          int numerical_flux_arg, int source_sink_arg, int dim, t8dg_williamson_etal_data_t *williamson_data,
-                                          t8dg_windfield_file_data_t *windfield_file_data, sc_MPI_Comm comm)
+t8dg_advect_diff_problem_description_new (int initial_cond_arg, t8dg_flow_type_t velocity_field_type, double flow_velocity,
+                                          double diffusion_coefficient, int numerical_flux_arg, int source_sink_arg, int dim,
+                                          t8dg_williamson_etal_data_t * williamson_data, t8dg_windfield_file_data_t * windfield_file_data,
+                                          sc_MPI_Comm comm)
 {
   t8dg_linear_advection_diffusion_problem_description_t *description;
   description = T8DG_ALLOC_ZERO (t8dg_linear_advection_diffusion_problem_description_t, 1);
@@ -174,14 +175,13 @@ t8dg_advect_diff_problem_description_new (int initial_cond_arg, t8dg_flow_type_t
   description->numerical_flux_advection = t8dg_linear_numerical_flux3D_lax_friedrich_fn;
   description->numerical_flux_advection_data = T8DG_ALLOC (double, 1);
 
-  switch  (velocity_field_type) {
+  switch (velocity_field_type) {
   case T8DG_FLOW_CONSTANT_3D:
-    { /* We need these '{' since otherwise we cannot declare variables in this block. */
+    {                           /* We need these '{' since otherwise we cannot declare variables in this block. */
       description->velocity_field = t8dg_linear_flux3D_constant_flux_fn;
       /* TODO: T8_NEW Operator? */
-      t8dg_linear_flux3D_constant_flux_data *flux_data_constant_3d =
-        new t8dg_linear_flux3D_constant_flux_data(1, 0, 0, flow_velocity);
-      *(double *) description->numerical_flux_advection_data = flux_data_constant_3d->get_flow_velocity();
+      t8dg_linear_flux3D_constant_flux_data *flux_data_constant_3d = new t8dg_linear_flux3D_constant_flux_data (1, 0, 0, flow_velocity);
+      *(double *) description->numerical_flux_advection_data = flux_data_constant_3d->get_flow_velocity ();
       flux_data = flux_data_constant_3d;
     }
     break;
@@ -199,16 +199,16 @@ t8dg_advect_diff_problem_description_new (int initial_cond_arg, t8dg_flow_type_t
     break;
 
   case T8DG_FLOW_MPTRAC_3D:
-  {
-    description->velocity_field = t8dg_mptrac_flow_3D_fn;
-    *(double *) description->numerical_flux_advection_data = 1;
-    /* To use the mptrac flow, we need to load the nc files and initial
-     * interpolation first. */
-    int hours_between_file_reads = windfield_file_data->hours_between_file_reads;
-    const char *windfield_file_prefix = windfield_file_data->windfield_file_prefix;
-    flux_data = new t8dg_mptrac_flux_data (windfield_file_prefix, hours_between_file_reads, comm);
-    break;
-  }
+    {
+      description->velocity_field = t8dg_mptrac_flow_3D_fn;
+      *(double *) description->numerical_flux_advection_data = 1;
+      /* To use the mptrac flow, we need to load the nc files and initial
+       * interpolation first. */
+      int                 hours_between_file_reads = windfield_file_data->hours_between_file_reads;
+      const char         *windfield_file_prefix = windfield_file_data->windfield_file_prefix;
+      flux_data = new t8dg_mptrac_flux_data (windfield_file_prefix, hours_between_file_reads, comm);
+      break;
+    }
   default:
     T8DG_ABORT ("Invalid flow type.");
     flux_data = NULL;
@@ -275,7 +275,7 @@ void
 t8dg_advect_diff_problem_description_destroy (t8dg_linear_advection_diffusion_problem_description_t ** p_description)
 {
   t8dg_linear_advection_diffusion_problem_description_t *description = *p_description;
-  delete description->flux_data;
+  delete              description->flux_data;
   T8DG_FREE (description->numerical_flux_advection_data);
   T8DG_FREE (description->numerical_flux_diffusion_concentration_data);
   T8DG_FREE (description->numerical_flux_diffusion_gradient_data);
@@ -308,8 +308,8 @@ t8dg_advect_diff_problem_init_arguments (int icmesh,
                                          int multigrid_levels,
                                          double refinement_threshold,
                                          double coarsening_threshold,
-                                         t8dg_williamson_etal_data_t *williamson_data,
-                                         t8dg_windfield_file_data_t *windfield_file_data,
+                                         t8dg_williamson_etal_data_t * williamson_data,
+                                         t8dg_windfield_file_data_t * windfield_file_data,
                                          int min_level,
                                          int max_level,
                                          int adapt_arg,
@@ -431,7 +431,7 @@ t8dg_advect_diff_problem_init (t8_forest_t forest, t8dg_linear_advection_diffusi
   problem->refine_error = refine_error;
   t8dg_advect_diff_problem_accumulate_stat (problem, ADVECT_DIFF_INIT, init_time + sc_MPI_Wtime ());
   /* Initialize the flux data */
-  problem->description->flux_data->initialize(problem);
+  problem->description->flux_data->initialize (problem);
   return problem;
 }
 
@@ -491,8 +491,8 @@ t8dg_advect_diff_solve (t8dg_linear_advection_diffusion_problem_t * problem)
     }
     if ((step_number + 1) % modulus == 0) {
       t8dg_global_essentialf ("Step %i of apx. %i time = %f (%li elements)\n", step_number + 1, apx_total_steps,
-          t8dg_timestepping_data_get_current_time(problem->time_data),
-          t8_forest_get_global_num_elements(problem->forest));
+                              t8dg_timestepping_data_get_current_time (problem->time_data),
+                              t8_forest_get_global_num_elements (problem->forest));
     }
 
     t8dg_advect_diff_problem_advance_timestep (problem);
@@ -761,7 +761,7 @@ t8dg_advect_diff_problem_set_time_step (t8dg_linear_advection_diffusion_problem_
       T8_ASSERT (diam > 0);
 
       if (problem->description->velocity_field == t8dg_linear_flux3D_constant_flux_fn) {
-        flow_velocity = ((t8dg_linear_flux3D_constant_flux_data *) problem->description->flux_data)->get_flow_velocity();   /*TODO: element_get_flow_velocity function */
+        flow_velocity = ((t8dg_linear_flux3D_constant_flux_data *) problem->description->flux_data)->get_flow_velocity ();      /*TODO: element_get_flow_velocity function */
         if (flow_velocity > 0) {
           delta_t = cfl * diam / flow_velocity; /*Assumption here that advection dominates */
         }
@@ -1046,9 +1046,10 @@ t8dg_advect_diff_problem_write_vtk (t8dg_linear_advection_diffusion_problem_t * 
 {
   double              io_time = -sc_MPI_Wtime ();
   const int           write_flow = 1;
-  const double time = t8dg_timestepping_data_get_current_time (problem->time_data);
-  
-  t8dg_output_write_vtk (problem->dof_values, problem->vtk_data, write_flow, problem->description->velocity_field, time, problem->description->flux_data);
+  const double        time = t8dg_timestepping_data_get_current_time (problem->time_data);
+
+  t8dg_output_write_vtk (problem->dof_values, problem->vtk_data, write_flow, problem->description->velocity_field, time,
+                         problem->description->flux_data);
 
   t8dg_advect_diff_problem_accumulate_stat (problem, ADVECT_DIFF_IO, io_time + sc_MPI_Wtime ());
 }
@@ -1074,9 +1075,9 @@ t8dg_advect_diff_problem_endtime_reached (const t8dg_linear_advection_diffusion_
 static int
 t8dg_advect_diff_norm_bounded (const t8dg_linear_advection_diffusion_problem_t * problem)
 {
-  const double max_norm = 1e8;
+  const double        max_norm = 1e8;
 
-  const double norm = t8dg_values_norm_l2 (problem->dg_values, problem->dof_values, problem->comm);
+  const double        norm = t8dg_values_norm_l2 (problem->dg_values, problem->dof_values, problem->comm);
 
   t8dg_global_productionf ("Computed L2 norm: %g\n", norm);
   if (norm >= max_norm) {
@@ -1086,17 +1087,17 @@ t8dg_advect_diff_norm_bounded (const t8dg_linear_advection_diffusion_problem_t *
   return norm < max_norm;
 }
 
+t8dg_values_t      *
+t8dg_advect_diff_problem_get_dg_values (t8dg_linear_advection_diffusion_problem_t * problem)
+{
+  return problem->dg_values;
+}
+
 #if T8_WITH_PETSC
 t8dg_adapt_data_t  *
 t8dg_advect_diff_problem_get_adapt_data (t8dg_linear_advection_diffusion_problem_t * problem)
 {
   return problem->adapt_data;
-}
-
-t8dg_values_t      *
-t8dg_advect_diff_problem_get_dg_values (t8dg_linear_advection_diffusion_problem_t * problem)
-{
-  return problem->dg_values;
 }
 
 #endif

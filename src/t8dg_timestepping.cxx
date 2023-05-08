@@ -92,6 +92,8 @@ t8dg_timestepping_runge_kutta_step (t8dg_time_matrix_application time_derivative
   t8dg_dof_values_t  *dof_step;
   double              time_beginning, time_current, time_step;
   int                 time_order = t8dg_timestepping_data_get_time_order (time_data);
+  double              threshold_min = 0.0;
+  double              threshold_max = 1.0;
 
   time_beginning = t8dg_timestepping_data_get_current_time (time_data);
   time_current = time_beginning;
@@ -120,6 +122,10 @@ t8dg_timestepping_runge_kutta_step (t8dg_time_matrix_application time_derivative
     time_derivative (*pdof_array, dof_change, time_current, user_data);
     /*add weighted summand to result */
     t8dg_dof_values_axpy (rk_b[istep + 1] * time_step, dof_change, dof_new);
+
+    /* apply limiting on dof to ensure that values are in range [threshold_min, threshold_max] */
+    t8dg_dof_values_pos_pres_limiter (dof_new, threshold_min, user_data);
+    t8dg_dof_values_max_limiter (dof_new, threshold_max, user_data);
   }
 
   t8dg_timestepping_data_set_current_time (time_data, time_beginning + time_step);

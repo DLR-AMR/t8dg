@@ -54,12 +54,12 @@ void                t8dg_values_apply_component_stiffness_matrix_dof (t8dg_value
                                                                       t8dg_dof_values_t * dest_dof);
 
 void                t8dg_values_apply_stiffness_matrix_linear_flux_fn3D
-  (t8dg_values_t * values, t8dg_linear_flux3D_fn flux_fn, t8dg_flux_data_base *flux_data, double time, t8dg_dof_values_t * src_dof,
+  (t8dg_values_t * values, t8dg_linear_flux3D_fn flux_fn, t8dg_flux_data_base * flux_data, double time, t8dg_dof_values_t * src_dof,
    t8dg_dof_values_t * dest_dof);
 
 void                t8dg_values_apply_boundary_integrals
   (t8dg_values_t * values, t8dg_dof_values_t * src_dof, t8dg_dof_values_t * dest_dof,
-   t8dg_linear_flux3D_fn linear_flux, t8dg_flux_data_base *flux_data, t8dg_numerical_linear_flux3D_fn numerical_flux,
+   t8dg_linear_flux3D_fn linear_flux, t8dg_flux_data_base * flux_data, t8dg_numerical_linear_flux3D_fn numerical_flux,
    void *numerical_flux_data, double time);
 
 void                t8dg_values_apply_component_boundary_integrals (t8dg_values_t * values, t8dg_dof_values_t * src_dof,
@@ -95,11 +95,19 @@ double              t8dg_values_norm_l_infty_rel (t8dg_values_t * values, t8dg_d
 void                t8dg_values_interpolate_scalar_function_3d_time
   (t8dg_values_t * values, t8dg_scalar_function_3d_time_fn function, double time, void *function_data, t8dg_dof_values_t * dof_values);
 
+double              t8dg_values_element_integral (t8dg_values_t * values, t8dg_element_dof_values_t * element_dof, t8_locidx_t itree,
+                                                  t8_locidx_t ielement);
+
+void                t8dg_dof_values_pos_pres_limiter (t8dg_dof_values_t * dof_values, double threshold, void *user_data);
+
+void                t8dg_dof_values_max_limiter (t8dg_dof_values_t * dof_values, double threshold, void *user_data);
+
 #if T8_WITH_PETSC
 
 void                t8dg_values_block_precon_apply_boundary_integrals (t8dg_values_t * values, t8dg_dof_values_t * src_dof,
                                                                        t8dg_dof_values_t * dest_dof, t8dg_linear_flux3D_fn linear_flux,
-                                                                       t8dg_flux_data_base *flux_data, t8dg_numerical_linear_flux3D_fn numerical_flux,
+                                                                       t8dg_flux_data_base * flux_data,
+                                                                       t8dg_numerical_linear_flux3D_fn numerical_flux,
                                                                        void *numerical_flux_data, double time, int selector);
 
 void                t8dg_values_block_precon_apply_component_boundary_integrals (t8dg_values_t * values, t8dg_dof_values_t * src_dof,

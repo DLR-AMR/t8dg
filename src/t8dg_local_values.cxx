@@ -925,6 +925,29 @@ t8dg_local_values_element_norm_l2_squared (t8dg_local_values_t * local_values, t
   return norm;
 }
 
+double
+t8dg_local_values_element_integral (t8dg_local_values_t * local_values, t8dg_element_dof_values_t * element_dof_values,
+                                    t8_locidx_t itree, t8_locidx_t ielement)
+{
+  double              integral = 0;
+  int                 idof, num_dof;
+  t8dg_element_dof_values_t *mass_times_dof;
+
+  num_dof = t8dg_element_dof_values_get_num_dof (element_dof_values);
+
+  mass_times_dof = t8dg_element_dof_values_duplicate (element_dof_values);
+
+  t8dg_local_values_apply_element_mass_matrix (local_values, itree, ielement, element_dof_values, mass_times_dof);
+
+  for (idof = 0; idof < num_dof; idof++) {
+    integral += t8dg_element_dof_values_get_value (mass_times_dof, idof);
+  }
+
+  t8dg_element_dof_values_destroy (&mass_times_dof);
+
+  return integral;
+}
+
 void
 t8dg_local_values_element_error_ana_l2_squared (t8dg_local_values_t * local_values, t8dg_dof_values_t * dof_values,
                                                 t8dg_dof_values_t * analytical_sol_dof, t8_locidx_t itree, t8_locidx_t ielement,

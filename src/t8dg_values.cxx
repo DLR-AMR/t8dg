@@ -1,4 +1,5 @@
 #include "t8dg.h"
+#include "t8dg_advect_diff_problem.h"
 #include "t8dg_global_values.h"
 #include "t8dg_local_values.h"
 #include "t8dg_values.h"
@@ -66,7 +67,7 @@ t8dg_values_destroy (t8dg_values_t ** p_values)
 {
   t8dg_values_t      *values;
   values = *p_values;
-  int         eclass;
+  int                 eclass;
 
   t8dg_mortar_array_destroy (&values->mortar_array);
 
@@ -128,8 +129,8 @@ t8dg_values_apply_inverse_mass_matrix (t8dg_values_t * values, t8dg_dof_values_t
 }
 
 void
-t8dg_values_apply_stiffness_matrix_linear_flux_fn3D (t8dg_values_t * values, t8dg_linear_flux3D_fn flux_fn, t8dg_flux_data_base *flux_data, double time,
-                                                     t8dg_dof_values_t * src_dof, t8dg_dof_values_t * dest_dof)
+t8dg_values_apply_stiffness_matrix_linear_flux_fn3D (t8dg_values_t * values, t8dg_linear_flux3D_fn flux_fn, t8dg_flux_data_base * flux_data,
+                                                     double time, t8dg_dof_values_t * src_dof, t8dg_dof_values_t * dest_dof)
 {
   int                 direction;
   t8dg_dofidx_t       idof;
@@ -301,8 +302,8 @@ t8dg_values_apply_component_boundary_integrals (t8dg_values_t * values, t8dg_dof
 
 void
 t8dg_values_apply_boundary_integrals (t8dg_values_t * values, t8dg_dof_values_t * src_dof, t8dg_dof_values_t * dest_dof,
-                                      t8dg_linear_flux3D_fn linear_flux, t8dg_flux_data_base *flux_data, t8dg_numerical_linear_flux3D_fn numerical_flux,
-                                      void *numerical_flux_data, double time)
+                                      t8dg_linear_flux3D_fn linear_flux, t8dg_flux_data_base * flux_data,
+                                      t8dg_numerical_linear_flux3D_fn numerical_flux, void *numerical_flux_data, double time)
 {
   t8_locidx_t         itree, ielement, idata;
   t8_locidx_t         num_trees, num_elems_in_tree;
@@ -363,7 +364,7 @@ t8dg_values_block_precon_apply_component_boundary_integrals (t8dg_values_t * val
 #if T8_WITH_PETSC
 void
 t8dg_values_block_precon_apply_boundary_integrals (t8dg_values_t * values, t8dg_dof_values_t * src_dof, t8dg_dof_values_t * dest_dof,
-                                                   t8dg_linear_flux3D_fn linear_flux, t8dg_flux_data_base *flux_data,
+                                                   t8dg_linear_flux3D_fn linear_flux, t8dg_flux_data_base * flux_data,
                                                    t8dg_numerical_linear_flux3D_fn numerical_flux, void *numerical_flux_data, double time,
                                                    int selector)
 {
@@ -746,6 +747,132 @@ t8dg_values_element_norm_l2_squared (t8dg_values_t * values, t8dg_element_dof_va
                                      t8_locidx_t ielement)
 {
   return t8dg_local_values_element_norm_l2_squared (values->local_values, element_dof, itree, ielement);
+}
+
+double
+t8dg_values_element_integral (t8dg_values_t * values, t8dg_element_dof_values_t * element_dof, t8_locidx_t itree, t8_locidx_t ielement)
+{
+  return t8dg_local_values_element_integral (values->local_values, element_dof, itree, ielement);
+}
+
+/* Limit variable in a way that all values are greater than or equal to threshold afterwards */
+/* Uses limiting method from Zhang, Shu (https://doi.org/10.1098/rspa.2011.0153) */
+void
+t8dg_dof_values_pos_pres_limiter (t8dg_dof_values_t * dof_values, double threshold, void *user_data)
+{
+  t8dg_linear_advection_diffusion_problem_t *problem = (t8dg_linear_advection_diffusion_problem_t *) user_data;
+  t8_forest_t         forest = t8dg_advect_diff_problem_get_forest (problem);
+  t8dg_values_t      *values = t8dg_advect_diff_problem_get_dg_values (problem);
+
+  double              integral, area;
+  double              theta;
+  double              u_mean, u_min, u_temp;
+
+  t8_locidx_t         num_elements, num_trees;
+  t8_locidx_t         ielement, itree, idata;
+
+  t8dg_element_dof_values_t *element_dof_values;
+
+  size_t              idof;
+
+  num_trees = t8_forest_get_num_local_trees (forest);
+  for (itree = 0, idata = 0; itree < num_trees; itree++) {
+    num_elements = t8_forest_get_tree_num_elements (forest, itree);
+    for (ielement = 0; ielement < num_elements; ielement++, idata++) {
+      element_dof_values = t8dg_dof_values_new_element_dof_values_view (dof_values, itree, ielement);
+
+      u_min = t8dg_element_dof_values_get_value (element_dof_values, 0);
+      for (idof = 1; idof < element_dof_values->elem_count; idof++)
+        u_min = SC_MIN (u_min, t8dg_element_dof_values_get_value (element_dof_values, idof));
+
+      if (u_min >= threshold) {
+        t8dg_element_dof_values_destroy (&element_dof_values);
+        continue;
+      }
+      integral = t8dg_values_element_integral (values, element_dof_values, itree, ielement);
+      area = t8dg_values_element_area (values, itree, ielement);
+
+      u_mean = integral / area;
+      theta = (u_mean - threshold) / (u_mean - u_min);
+
+      for (idof = 0; idof < element_dof_values->elem_count; idof++) {
+        if (u_mean != u_min)
+          u_temp = theta * t8dg_element_dof_values_get_value (element_dof_values, idof) + (1 - theta) * u_mean;
+        else
+          u_temp = threshold;
+
+        // Safety cut off, if u_mean should be below threshold before limiting
+        // Due to procedure, limiting only shifts above threshold when u_mean >= threshold before
+        // This is done to allow threshold = 0 in 3D MPTRAC case (values at boundaries must be 0 to avoid errors)
+        // In general, limiter needs small positive value to work accurate
+        if (u_temp < threshold)
+          u_temp = threshold;
+
+        t8dg_element_dof_values_set_value (element_dof_values, idof, u_temp);
+      }
+
+      t8dg_element_dof_values_destroy (&element_dof_values);
+    }
+  }
+}
+
+/* Limit variable in a way that all values are less than or equal threshold afterwards */
+/* Adapts (turns around) limiting method from Zhang, Shu (https://doi.org/10.1098/rspa.2011.0153) */
+void
+t8dg_dof_values_max_limiter (t8dg_dof_values_t * dof_values, double threshold, void *user_data)
+{
+  t8dg_linear_advection_diffusion_problem_t *problem = (t8dg_linear_advection_diffusion_problem_t *) user_data;
+  t8_forest_t         forest = t8dg_advect_diff_problem_get_forest (problem);
+  t8dg_values_t      *values = t8dg_advect_diff_problem_get_dg_values (problem);
+
+  double              integral, area;
+  double              theta;
+  double              u_mean, u_max, u_temp;
+
+  t8_locidx_t         num_elements, num_trees;
+  t8_locidx_t         ielement, itree, idata;
+
+  t8dg_element_dof_values_t *element_dof_values;
+
+  size_t              idof;
+
+  num_trees = t8_forest_get_num_local_trees (forest);
+  for (itree = 0, idata = 0; itree < num_trees; itree++) {
+    num_elements = t8_forest_get_tree_num_elements (forest, itree);
+    for (ielement = 0; ielement < num_elements; ielement++, idata++) {
+      element_dof_values = t8dg_dof_values_new_element_dof_values_view (dof_values, itree, ielement);
+
+      u_max = t8dg_element_dof_values_get_value (element_dof_values, 0);
+      for (idof = 1; idof < element_dof_values->elem_count; idof++)
+        u_max = SC_MAX (u_max, t8dg_element_dof_values_get_value (element_dof_values, idof));
+
+      if (u_max <= threshold) {
+        t8dg_element_dof_values_destroy (&element_dof_values);
+        continue;
+      }
+      integral = t8dg_values_element_integral (values, element_dof_values, itree, ielement);
+      area = t8dg_values_element_area (values, itree, ielement);
+
+      u_mean = integral / area;
+      theta = (threshold - u_mean) / (u_max - u_mean);
+
+      for (idof = 0; idof < element_dof_values->elem_count; idof++) {
+        if (u_mean != u_max)
+          u_temp = theta * t8dg_element_dof_values_get_value (element_dof_values, idof) + (1 - theta) * u_mean;
+        else
+          u_temp = threshold;
+
+        // Safety cut off, if u_mean should be above threshold before limiting
+        // Due to procedure, limiting only shifts below threshold when u_mean <= threshold before
+        if (u_temp > threshold)
+          u_temp = threshold;
+
+        t8dg_element_dof_values_set_value (element_dof_values, idof, u_temp);
+      }
+
+      t8dg_element_dof_values_destroy (&element_dof_values);
+    }
+  }
 }
 
 double

@@ -47,7 +47,7 @@ typedef struct t8dg_linear_advection_diffusion_problem_description
   void               *analytical_sol_data;
 
   t8dg_linear_flux3D_fn velocity_field;
-  t8dg_flux_data_base  *flux_data;
+  t8dg_flux_data_base *flux_data;
 
   double              diffusion_coefficient;
   t8dg_numerical_linear_flux3D_fn numerical_flux_advection;
@@ -84,8 +84,8 @@ t8dg_linear_advection_diffusion_problem_t *t8dg_advect_diff_problem_init_argumen
                                                                                     int multigrid_levels,
                                                                                     double refinement_threshold,
                                                                                     double coarsening_threshold,
-                                                                                    t8dg_williamson_etal_data_t *williamson_data,
-                                                                                    t8dg_windfield_file_data_t *windfield_file_data,
+                                                                                    t8dg_williamson_etal_data_t * williamson_data,
+                                                                                    t8dg_windfield_file_data_t * windfield_file_data,
                                                                                     int min_level,
                                                                                     int max_level,
                                                                                     int adapt_arg,
@@ -107,13 +107,12 @@ void                t8dg_advect_diff_problem_destroy (t8dg_linear_advection_diff
 /** Return the forest that is associated to a problem.
  * \param [in] problem The advection diffusion problem.
  */
-const t8_forest_t   t8dg_advect_diff_problem_get_forest (const t8dg_linear_advection_diffusion_problem_t *problem);
+const t8_forest_t   t8dg_advect_diff_problem_get_forest (const t8dg_linear_advection_diffusion_problem_t * problem);
 
 /** Return the timestepping data that is associated to a problem.
  * \param [in] problem The advection diffusion problem.
  */
-const t8dg_timestepping_data_t *t8dg_advect_diff_problem_get_time_data (const t8dg_linear_advection_diffusion_problem_t *problem);
-
+const t8dg_timestepping_data_t *t8dg_advect_diff_problem_get_time_data (const t8dg_linear_advection_diffusion_problem_t * problem);
 
 /*do the important stuff*/
 void                t8dg_advect_diff_solve (t8dg_linear_advection_diffusion_problem_t * problem);
@@ -149,11 +148,11 @@ void                t8dg_advect_diff_problem_set_time_step (t8dg_linear_advectio
 
 int                 t8dg_advect_diff_problem_get_apx_total_steps (const t8dg_linear_advection_diffusion_problem_t * problem);
 
+t8dg_values_t      *t8dg_advect_diff_problem_get_dg_values (t8dg_linear_advection_diffusion_problem_t * problem);
+
 #if T8_WITH_PETSC
 
 t8dg_adapt_data_t  *t8dg_advect_diff_problem_get_adapt_data (t8dg_linear_advection_diffusion_problem_t * problem);
-
-t8dg_values_t      *t8dg_advect_diff_problem_get_dg_values (t8dg_linear_advection_diffusion_problem_t * problem);
 
 void                t8dg_advect_diff_problem_block_precon_time_derivative_variant (t8dg_dof_values_t * dof_values,
                                                                                    t8dg_dof_values_t * dof_change, const double t,

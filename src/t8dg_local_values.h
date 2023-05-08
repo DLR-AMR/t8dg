@@ -183,6 +183,9 @@ double
  t8dg_local_values_element_norm_l2_squared (t8dg_local_values_t * local_values, t8dg_element_dof_values_t * element_dof_values,
                                             t8_locidx_t itree, t8_locidx_t ielement);
 
+double              t8dg_local_values_element_integral (t8dg_local_values_t * local_values, t8dg_element_dof_values_t * element_dof_values,
+                                                        t8_locidx_t itree, t8_locidx_t ielement);
+
 void                t8dg_local_values_element_error_ana_l2_squared (t8dg_local_values_t * local_values, t8dg_dof_values_t * dof_values,
                                                                     t8dg_dof_values_t * analytical_sol_dof, t8_locidx_t itree,
                                                                     t8_locidx_t ielement, double time, double *error_squared_summand,
