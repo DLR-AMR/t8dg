@@ -544,6 +544,12 @@ t8dg_advect_diff_time_derivative (t8dg_dof_values_t * dof_values, t8dg_dof_value
   t8dg_dof_values_t  *dof_summand;
   t8dg_dof_values_t  *dof_sum;
 
+  t8_forest_t         forest = t8dg_advect_diff_problem_get_forest (problem);
+  t8_locidx_t         num_elements, num_trees;
+  t8_locidx_t         ielement, itree, idata;
+  t8dg_element_dof_values_t *element_dof_values;
+  size_t              idof;
+
   sqrt_diffusion_coefficient = sqrt (problem->description->diffusion_coefficient);
 
   gradient_component = t8dg_dof_values_duplicate (dof_values);
@@ -582,6 +588,27 @@ t8dg_advect_diff_time_derivative (t8dg_dof_values_t * dof_values, t8dg_dof_value
     }
 
   }
+
+  num_trees = t8_forest_get_num_local_trees (forest);
+  for (itree = 0, idata = 0; itree < num_trees; itree++) {
+    num_elements = t8_forest_get_tree_num_elements (forest, itree);
+    for (ielement = 0; ielement < num_elements; ielement++, idata++) {
+      element_dof_values = t8dg_dof_values_new_element_dof_values_view (dof_values, itree, ielement);
+      //printf("Nr. El: %d\n", ielement);
+      double dummy = 0.0;
+      for (idof = 0; idof < element_dof_values->elem_count; idof++) {
+        dummy = SC_MAX (dummy, t8dg_element_dof_values_get_value (element_dof_values, idof));
+      }
+      if (dummy > (1e-6)) {
+        for (idof = 0; idof < element_dof_values->elem_count; idof++){
+          // Schritt 3 - Stufe 1
+          // z.B. Werte in Element 13 ca. 10^5 (vorher nichts!)
+          //printf("\tdof_value: %f\n", t8dg_element_dof_values_get_value (element_dof_values, idof));
+        }
+      }
+      t8dg_element_dof_values_destroy (&element_dof_values);
+    }
+  }
   t8dg_values_apply_stiffness_matrix_linear_flux_fn3D (problem->dg_values, problem->description->velocity_field,
                                                        problem->description->flux_data, t, dof_values, dof_summand);
 
@@ -590,9 +617,52 @@ t8dg_advect_diff_time_derivative (t8dg_dof_values_t * dof_values, t8dg_dof_value
   //t8dg_debugf ("stiffnessmatrix:\n");
   //t8dg_dof_values_debug_print (dof_summand);
 
+  num_trees = t8_forest_get_num_local_trees (forest);
+  for (itree = 0, idata = 0; itree < num_trees; itree++) {
+    num_elements = t8_forest_get_tree_num_elements (forest, itree);
+    for (ielement = 0; ielement < num_elements; ielement++, idata++) {
+      element_dof_values = t8dg_dof_values_new_element_dof_values_view (dof_values, itree, ielement);
+      //printf("Nr. El: %d\n", ielement);
+      double dummy = 0.0;
+      for (idof = 0; idof < element_dof_values->elem_count; idof++) {
+        dummy = SC_MAX (dummy, t8dg_element_dof_values_get_value (element_dof_values, idof));
+      }
+      if (dummy > (1e-6)) {
+        for (idof = 0; idof < element_dof_values->elem_count; idof++){
+          // Schritt 3 - Stufe 1
+          // z.B. Werte in Element 13 ca. 10^5 (vorher nichts!)
+          //printf("\tdof_value: %f\n", t8dg_element_dof_values_get_value (element_dof_values, idof));
+        }
+      }
+      t8dg_element_dof_values_destroy (&element_dof_values);
+    }
+  }
+  // dof_values sinnvoll vor Update?
   t8dg_values_apply_boundary_integrals (problem->dg_values, dof_values, dof_summand, problem->description->velocity_field,
                                         problem->description->flux_data, problem->description->numerical_flux_advection,
                                         problem->description->numerical_flux_advection_data, t);
+  // Hier komische Werte in dof_summand? Testen! 
+  
+  num_trees = t8_forest_get_num_local_trees (forest);
+  for (itree = 0, idata = 0; itree < num_trees; itree++) {
+    num_elements = t8_forest_get_tree_num_elements (forest, itree);
+    for (ielement = 0; ielement < num_elements; ielement++, idata++) {
+      element_dof_values = t8dg_dof_values_new_element_dof_values_view (dof_summand, itree, ielement);
+      //printf("Nr. El: %d\n", ielement);
+      double dummy = 0.0;
+      for (idof = 0; idof < element_dof_values->elem_count; idof++) {
+        dummy = SC_MAX (dummy, t8dg_element_dof_values_get_value (element_dof_values, idof));
+      }
+      if (dummy > (1e-6)) {
+        for (idof = 0; idof < element_dof_values->elem_count; idof++){
+          // Schritt 3 - Stufe 1
+          // z.B. 1. Wert in Element 13: -1312303172757837437730816.0
+          //printf("\tBoundary integral values: %f\n", t8dg_element_dof_values_get_value (element_dof_values, idof));
+        }
+      }
+      t8dg_element_dof_values_destroy (&element_dof_values);
+    }
+  }
 
   t8dg_dof_values_subtract (dof_sum, dof_summand);      /*subtract function */
   //t8dg_debugf ("boundary_matrix:\n");

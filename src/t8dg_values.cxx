@@ -785,6 +785,8 @@ t8dg_dof_values_pos_pres_limiter (t8dg_dof_values_t * dof_values, double thresho
       for (idof = 1; idof < element_dof_values->elem_count; idof++)
         u_min = SC_MIN (u_min, t8dg_element_dof_values_get_value (element_dof_values, idof));
 
+      //printf("Nr. El: %d, Min_value %f\n", ielement, u_min);
+
       if (u_min >= threshold) {
         t8dg_element_dof_values_destroy (&element_dof_values);
         continue;
@@ -795,7 +797,12 @@ t8dg_dof_values_pos_pres_limiter (t8dg_dof_values_t * dof_values, double thresho
       u_mean = integral / area;
       theta = (u_mean - threshold) / (u_mean - u_min);
 
+      //printf("Theta: %f, Mean: %f\n", theta, u_mean);
+
       for (idof = 0; idof < element_dof_values->elem_count; idof++) {
+
+        //printf("\tOld value: %f", t8dg_element_dof_values_get_value (element_dof_values, idof));
+
         if (u_mean != u_min)
           u_temp = theta * t8dg_element_dof_values_get_value (element_dof_values, idof) + (1 - theta) * u_mean;
         else
@@ -808,6 +815,8 @@ t8dg_dof_values_pos_pres_limiter (t8dg_dof_values_t * dof_values, double thresho
         if (u_temp < threshold)
           u_temp = threshold;
 
+        //printf("\tNew value: %f\n", u_temp);
+        
         t8dg_element_dof_values_set_value (element_dof_values, idof, u_temp);
       }
 

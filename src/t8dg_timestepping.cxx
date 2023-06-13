@@ -92,8 +92,6 @@ t8dg_timestepping_runge_kutta_step (t8dg_time_matrix_application time_derivative
   t8dg_dof_values_t  *dof_step;
   double              time_beginning, time_current, time_step;
   int                 time_order = t8dg_timestepping_data_get_time_order (time_data);
-  double              threshold_min = 0.0;
-  double              threshold_max = 1.0;
 
   time_beginning = t8dg_timestepping_data_get_current_time (time_data);
   time_current = time_beginning;
@@ -122,10 +120,6 @@ t8dg_timestepping_runge_kutta_step (t8dg_time_matrix_application time_derivative
     time_derivative (*pdof_array, dof_change, time_current, user_data);
     /*add weighted summand to result */
     t8dg_dof_values_axpy (rk_b[istep + 1] * time_step, dof_change, dof_new);
-
-    /* apply limiting on dof to ensure that values are in range [threshold_min, threshold_max] */
-    t8dg_dof_values_pos_pres_limiter (dof_new, threshold_min, user_data);
-    t8dg_dof_values_max_limiter (dof_new, threshold_max, user_data);
   }
 
   t8dg_timestepping_data_set_current_time (time_data, time_beginning + time_step);
@@ -135,6 +129,127 @@ t8dg_timestepping_runge_kutta_step (t8dg_time_matrix_application time_derivative
   t8dg_dof_values_destroy (&dof_change);
   t8dg_dof_values_destroy (&dof_new);
   t8dg_dof_values_destroy (&dof_step);
+}
+
+void
+t8dg_timestepping_ssprk3 (t8dg_time_matrix_application time_derivative,
+                          t8dg_timestepping_data_t * time_data, t8dg_dof_values_t ** pdof_array, void *user_data)
+{
+  t8dg_dof_values_t  *dof_beginning;
+  t8dg_dof_values_t  *dof_stage;
+  t8dg_dof_values_t  *dof_stage_clone;
+  t8dg_dof_values_t  *dof_change;
+  double              time_beginning, time_current, time_step;
+  double              threshold_min = 0.0;
+  double              threshold_max = 1.0;
+
+  time_beginning = t8dg_timestepping_data_get_current_time (time_data);
+  time_current = time_beginning;
+  time_step = t8dg_timestepping_data_get_time_step (time_data);
+
+  dof_beginning = t8dg_dof_values_clone (*pdof_array);
+  dof_stage = t8dg_dof_values_duplicate (dof_beginning);
+  dof_change = t8dg_dof_values_duplicate (dof_beginning);
+
+  // STAGE 1 -> u_1
+  time_derivative (*pdof_array, dof_change, time_current, user_data);
+  // u_1 = u_n + delT*F(t_n, u_n) [u_n = u_beginning]
+  t8dg_dof_values_axpyz (time_step, dof_change, dof_beginning, dof_stage);
+  t8dg_dof_values_pos_pres_limiter (dof_stage, threshold_min, user_data);
+  t8dg_dof_values_max_limiter (dof_stage, threshold_max, user_data);
+
+  dof_stage_clone = t8dg_dof_values_clone (dof_stage);
+
+
+  t8dg_linear_advection_diffusion_problem_t *problem = (t8dg_linear_advection_diffusion_problem_t *) user_data;
+  t8_forest_t         forest = t8dg_advect_diff_problem_get_forest (problem);
+  t8dg_values_t      *values = t8dg_advect_diff_problem_get_dg_values (problem);
+
+  t8_locidx_t         ielement = 511; //passend zu uniformer Verfeinerung mit Reflvl4
+  t8_locidx_t         itree = 0;
+
+  t8dg_element_dof_values_t *element_dof_values_change, *element_dof_values_beginning, *element_dof_values_stage, *element_dof_values_stage_clone;
+
+  size_t              idof;
+  /*
+  element_dof_values_change = t8dg_dof_values_new_element_dof_values_view (dof_change, itree, ielement);
+  element_dof_values_beginning = t8dg_dof_values_new_element_dof_values_view (dof_beginning, itree, ielement);
+  element_dof_values_stage = t8dg_dof_values_new_element_dof_values_view (dof_stage, itree, ielement);
+  element_dof_values_stage_clone = t8dg_dof_values_new_element_dof_values_view (dof_stage, itree, ielement);
+
+  for (idof = 0; idof < element_dof_values->elem_count; idof++){
+    printf ("dof_beginning: %f\ttime_step: %f\tdof_change: %f\tdof_stage: %f\n", t8dg_element_dof_values_get_value (element_dof_values_beginning, idof), time_step, t8dg_element_dof_values_get_value (element_dof_values_change, idof), t8dg_element_dof_values_get_value (element_dof_values_stage, idof));
+  }
+  printf ("\n\n");
+  */
+
+  t8dg_dof_values_swap (pdof_array, &dof_stage);
+  /*
+  t8dg_element_dof_values_destroy (&element_dof_values_change);
+  t8dg_element_dof_values_destroy (&element_dof_values_stage);
+  t8dg_element_dof_values_destroy (&element_dof_values_stage_clone);
+  t8dg_element_dof_values_destroy (&element_dof_values_beginning);
+  */
+
+  /*
+    Idee, warum swap benutzt und nicht mit dof_stage weiter gerechnet:
+    In Funktion hinter 'time_derivative' ist der erste Parameter nicht const.
+    Swap koennte Sicherheitsmechanismus sein, damit (moeglicherweise veraenderte) Eingabe-Werte nicht weiter verwendet werden
+    Daher: Berechne u_stage und vertausche pdof_array und dof_stage danach
+    Benutze diese Art erst einmal weiter. Da aber im Gegensatz zu obigen RK-Verfahren das dof_stage im Update benoetigt wird
+    und vorher mit pdof_array getauscht wurde, fuehre ich Klon der dof ein, um diesen fuer das Update zu benutzen.
+  */
+
+  // STAGE 2 -> u_2
+  // Evaluation at t_n + delT
+  time_current = time_beginning + time_step;
+  t8dg_timestepping_data_set_current_time (time_data, time_current);
+  time_derivative (*pdof_array, dof_change, time_current, user_data);
+  // u_2 = 3/4*u_n + 1/4*u_1 + 1/4*delT*F(t_n+delT, u_1)
+  t8dg_dof_values_axpbypczq (1./4.*time_step, dof_change, 3./4., dof_beginning, 1./4., dof_stage_clone, dof_stage);
+  t8dg_dof_values_pos_pres_limiter (dof_stage, threshold_min, user_data);
+  t8dg_dof_values_max_limiter (dof_stage, threshold_max, user_data);
+
+  /*
+  element_dof_values_change = t8dg_dof_values_new_element_dof_values_view (dof_change, itree, ielement);
+  element_dof_values_beginning = t8dg_dof_values_new_element_dof_values_view (dof_beginning, itree, ielement);
+  element_dof_values_stage = t8dg_dof_values_new_element_dof_values_view (dof_stage, itree, ielement);
+  element_dof_values_stage_clone = t8dg_dof_values_new_element_dof_values_view (dof_stage_clone, itree, ielement);
+
+  for (idof = 0; idof < element_dof_values_change->elem_count; idof++){
+    printf ("dof_beginning: %f\ttime_step: %f\tdof_change: %f\tdof_stage_clone: %f\tdof_stage_res: %f\n", t8dg_element_dof_values_get_value (element_dof_values_beginning, idof), time_step, t8dg_element_dof_values_get_value (element_dof_values_change, idof), t8dg_element_dof_values_get_value (element_dof_values_stage_clone, idof), t8dg_element_dof_values_get_value (element_dof_values_stage, idof));
+  }
+  printf ("\n\n");
+
+  t8dg_element_dof_values_destroy (&element_dof_values_change);
+  t8dg_element_dof_values_destroy (&element_dof_values_stage);
+  t8dg_element_dof_values_destroy (&element_dof_values_stage_clone);
+  t8dg_element_dof_values_destroy (&element_dof_values_beginning);
+  */
+
+
+  dof_stage_clone = t8dg_dof_values_clone (dof_stage);
+  t8dg_dof_values_swap (pdof_array, &dof_stage);
+
+  // Stage 3 -> update time step u_n to u_(n+1)
+  // Evaluation at t_n + 1/2*delT
+  time_current = time_beginning + 1/2*time_step;
+  t8dg_timestepping_data_set_current_time (time_data, time_current);
+  time_derivative (*pdof_array, dof_change, time_current, user_data);
+  // u_(n+1) = 1/3*u_n + 2/3*u_2 + 2/3*delT*F(t_n+1/2*delT, u_2)
+  t8dg_dof_values_axpbypczq (2./3.*time_step, dof_change, 1./3., dof_beginning, 2./3., dof_stage_clone, dof_stage);
+  t8dg_dof_values_pos_pres_limiter (dof_stage, threshold_min, user_data);
+  t8dg_dof_values_max_limiter (dof_stage, threshold_max, user_data);
+
+  t8dg_dof_values_swap (pdof_array, &dof_stage);
+
+
+  t8dg_timestepping_data_set_current_time (time_data, time_beginning + time_step);
+
+  t8dg_dof_values_destroy (&dof_beginning);
+  t8dg_dof_values_destroy (&dof_change);
+  t8dg_dof_values_destroy (&dof_stage);
+  t8dg_dof_values_destroy (&dof_stage_clone);
 }
 
 t8dg_timestepping_data_t *
@@ -855,10 +970,12 @@ void
 t8dg_timestepping_choose_impl_expl_method (t8dg_time_matrix_application time_derivative,
                                            t8dg_timestepping_data_t * time_data, t8dg_dof_values_t ** pdof_array, void *user_data)
 {
+  // Fallunterscheidung SSPRK3 hier einbauen
   if (time_data->use_implicit_timestepping == 0) {
     /* An explicit time stepping method has been chosen */
     t8dg_debugf ("Explicit RKV of order %d has been called.\n", time_data->time_order);
-    t8dg_timestepping_runge_kutta_step (time_derivative, time_data, pdof_array, user_data);
+    //t8dg_timestepping_runge_kutta_step (time_derivative, time_data, pdof_array, user_data);
+    t8dg_timestepping_ssprk3 (time_derivative, time_data, pdof_array, user_data);
   }
   else if (time_data->use_implicit_timestepping == 1) {
 #if T8_WITH_PETSC

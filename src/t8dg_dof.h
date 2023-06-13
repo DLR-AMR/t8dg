@@ -53,6 +53,8 @@ void                t8dg_dof_values_axpy (double a, const t8dg_dof_values_t * x,
 
 void                t8dg_dof_values_axpyz (double a, const t8dg_dof_values_t * x, const t8dg_dof_values_t * y, t8dg_dof_values_t * z);
 
+void                t8dg_dof_values_axpbypczq (double a, const t8dg_dof_values_t * x, double b, const t8dg_dof_values_t * y, double c, const t8dg_dof_values_t * z, t8dg_dof_values_t * q);
+
 void                t8dg_dof_values_debug_print (t8dg_dof_values_t * array);
 
 void                t8dg_dof_values_print (t8dg_dof_values_t * array);

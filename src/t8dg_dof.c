@@ -309,6 +309,25 @@ t8dg_dof_values_axpyz (double a, const t8dg_dof_values_t * x, const t8dg_dof_val
 }
 
 void
+t8dg_dof_values_axpbypczq (double a, const t8dg_dof_values_t * x, double b, const t8dg_dof_values_t * y, double c, const t8dg_dof_values_t * z, t8dg_dof_values_t * q)
+{
+  double             *x_double, *y_double, *z_double, *q_double;
+  int                 double_count, i;
+
+  /*View array as double array */
+  x_double = (double *) x->dofs->array;
+  y_double = (double *) y->dofs->array;
+  z_double = (double *) z->dofs->array;
+  q_double = (double *) q->dofs->array;
+  double_count = x->max_num_element_dof * x->num_total_elements;        /*total number of doubles */
+
+  for (i = 0; i < double_count; i++) {
+    q_double[i] = a * x_double[i] + b * y_double[i] + c * z_double[i];
+  }
+
+}
+
+void
 t8dg_dof_values_debug_print (t8dg_dof_values_t * array)
 {
 #ifdef T8_ENABLE_DEBUG
