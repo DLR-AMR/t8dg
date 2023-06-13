@@ -601,8 +601,6 @@ t8dg_advect_diff_time_derivative (t8dg_dof_values_t * dof_values, t8dg_dof_value
       }
       if (dummy > (1e-6)) {
         for (idof = 0; idof < element_dof_values->elem_count; idof++){
-          // Schritt 3 - Stufe 1
-          // z.B. Werte in Element 13 ca. 10^5 (vorher nichts!)
           //printf("\tdof_value: %f\n", t8dg_element_dof_values_get_value (element_dof_values, idof));
         }
       }
@@ -629,8 +627,6 @@ t8dg_advect_diff_time_derivative (t8dg_dof_values_t * dof_values, t8dg_dof_value
       }
       if (dummy > (1e-6)) {
         for (idof = 0; idof < element_dof_values->elem_count; idof++){
-          // Schritt 3 - Stufe 1
-          // z.B. Werte in Element 13 ca. 10^5 (vorher nichts!)
           //printf("\tdof_value: %f\n", t8dg_element_dof_values_get_value (element_dof_values, idof));
         }
       }
@@ -655,8 +651,6 @@ t8dg_advect_diff_time_derivative (t8dg_dof_values_t * dof_values, t8dg_dof_value
       }
       if (dummy > (1e-6)) {
         for (idof = 0; idof < element_dof_values->elem_count; idof++){
-          // Schritt 3 - Stufe 1
-          // z.B. 1. Wert in Element 13: -1312303172757837437730816.0
           //printf("\tBoundary integral values: %f\n", t8dg_element_dof_values_get_value (element_dof_values, idof));
         }
       }
