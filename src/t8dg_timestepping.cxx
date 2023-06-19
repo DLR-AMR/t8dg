@@ -159,46 +159,7 @@ t8dg_timestepping_ssprk3 (t8dg_time_matrix_application time_derivative,
   t8dg_dof_values_max_limiter (dof_stage, threshold_max, user_data);
 
   dof_stage_clone = t8dg_dof_values_clone (dof_stage);
-
-
-  t8dg_linear_advection_diffusion_problem_t *problem = (t8dg_linear_advection_diffusion_problem_t *) user_data;
-  t8_forest_t         forest = t8dg_advect_diff_problem_get_forest (problem);
-  t8dg_values_t      *values = t8dg_advect_diff_problem_get_dg_values (problem);
-
-  t8_locidx_t         ielement = 511; //passend zu uniformer Verfeinerung mit Reflvl4
-  t8_locidx_t         itree = 0;
-
-  t8dg_element_dof_values_t *element_dof_values_change, *element_dof_values_beginning, *element_dof_values_stage, *element_dof_values_stage_clone;
-
-  size_t              idof;
-  /*
-  element_dof_values_change = t8dg_dof_values_new_element_dof_values_view (dof_change, itree, ielement);
-  element_dof_values_beginning = t8dg_dof_values_new_element_dof_values_view (dof_beginning, itree, ielement);
-  element_dof_values_stage = t8dg_dof_values_new_element_dof_values_view (dof_stage, itree, ielement);
-  element_dof_values_stage_clone = t8dg_dof_values_new_element_dof_values_view (dof_stage, itree, ielement);
-
-  for (idof = 0; idof < element_dof_values->elem_count; idof++){
-    printf ("dof_beginning: %f\ttime_step: %f\tdof_change: %f\tdof_stage: %f\n", t8dg_element_dof_values_get_value (element_dof_values_beginning, idof), time_step, t8dg_element_dof_values_get_value (element_dof_values_change, idof), t8dg_element_dof_values_get_value (element_dof_values_stage, idof));
-  }
-  printf ("\n\n");
-  */
-
   t8dg_dof_values_swap (pdof_array, &dof_stage);
-  /*
-  t8dg_element_dof_values_destroy (&element_dof_values_change);
-  t8dg_element_dof_values_destroy (&element_dof_values_stage);
-  t8dg_element_dof_values_destroy (&element_dof_values_stage_clone);
-  t8dg_element_dof_values_destroy (&element_dof_values_beginning);
-  */
-
-  /*
-    Idee, warum swap benutzt und nicht mit dof_stage weiter gerechnet:
-    In Funktion hinter 'time_derivative' ist der erste Parameter nicht const.
-    Swap koennte Sicherheitsmechanismus sein, damit (moeglicherweise veraenderte) Eingabe-Werte nicht weiter verwendet werden
-    Daher: Berechne u_stage und vertausche pdof_array und dof_stage danach
-    Benutze diese Art erst einmal weiter. Da aber im Gegensatz zu obigen RK-Verfahren das dof_stage im Update benoetigt wird
-    und vorher mit pdof_array getauscht wurde, fuehre ich Klon der dof ein, um diesen fuer das Update zu benutzen.
-  */
 
   // STAGE 2 -> u_2
   // Evaluation at t_n + delT
