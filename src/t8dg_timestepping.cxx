@@ -210,24 +210,7 @@ t8dg_timestepping_ssprk3 (t8dg_time_matrix_application time_derivative,
   t8dg_dof_values_pos_pres_limiter (dof_stage, threshold_min, user_data);
   t8dg_dof_values_max_limiter (dof_stage, threshold_max, user_data);
 
-  /*
-  element_dof_values_change = t8dg_dof_values_new_element_dof_values_view (dof_change, itree, ielement);
-  element_dof_values_beginning = t8dg_dof_values_new_element_dof_values_view (dof_beginning, itree, ielement);
-  element_dof_values_stage = t8dg_dof_values_new_element_dof_values_view (dof_stage, itree, ielement);
-  element_dof_values_stage_clone = t8dg_dof_values_new_element_dof_values_view (dof_stage_clone, itree, ielement);
-
-  for (idof = 0; idof < element_dof_values_change->elem_count; idof++){
-    printf ("dof_beginning: %f\ttime_step: %f\tdof_change: %f\tdof_stage_clone: %f\tdof_stage_res: %f\n", t8dg_element_dof_values_get_value (element_dof_values_beginning, idof), time_step, t8dg_element_dof_values_get_value (element_dof_values_change, idof), t8dg_element_dof_values_get_value (element_dof_values_stage_clone, idof), t8dg_element_dof_values_get_value (element_dof_values_stage, idof));
-  }
-  printf ("\n\n");
-
-  t8dg_element_dof_values_destroy (&element_dof_values_change);
-  t8dg_element_dof_values_destroy (&element_dof_values_stage);
-  t8dg_element_dof_values_destroy (&element_dof_values_stage_clone);
-  t8dg_element_dof_values_destroy (&element_dof_values_beginning);
-  */
-
-
+  t8dg_dof_values_destroy (&dof_stage_clone);
   dof_stage_clone = t8dg_dof_values_clone (dof_stage);
   t8dg_dof_values_swap (pdof_array, &dof_stage);
 
