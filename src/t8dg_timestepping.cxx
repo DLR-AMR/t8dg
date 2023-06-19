@@ -131,6 +131,9 @@ t8dg_timestepping_runge_kutta_step (t8dg_time_matrix_application time_derivative
   t8dg_dof_values_destroy (&dof_step);
 }
 
+// hard coded SSPRK3 time solver, based on reformulation of RK as described in https://doi.org/10.1016/j.jcp.2009.12.030
+// this formulation is mathematically equivalent to standard RK formulation
+// uses splitting into stages for easy apply of the limiter after each stage
 void
 t8dg_timestepping_ssprk3 (t8dg_time_matrix_application time_derivative,
                           t8dg_timestepping_data_t * time_data, t8dg_dof_values_t ** pdof_array, void *user_data)
@@ -177,7 +180,7 @@ t8dg_timestepping_ssprk3 (t8dg_time_matrix_application time_derivative,
 
   // Stage 3 -> update time step u_n to u_(n+1)
   // Evaluation at t_n + 1/2*delT
-  time_current = time_beginning + 1/2*time_step;
+  time_current = time_beginning + 0.5*time_step;
   t8dg_timestepping_data_set_current_time (time_data, time_current);
   time_derivative (*pdof_array, dof_change, time_current, user_data);
   // u_(n+1) = 1/3*u_n + 2/3*u_2 + 2/3*delT*F(t_n+1/2*delT, u_2)
