@@ -27,6 +27,7 @@ struct t8dg_timestepping_data
   double              cfl;      /**< cfl number*/
   int                 step_number;
   int                 use_implicit_timestepping;
+  int                 use_ssprk3;
   int                 preconditioner_selection;
   int                 multigrid_levels;
 };
@@ -200,7 +201,7 @@ t8dg_timestepping_ssprk3 (t8dg_time_matrix_application time_derivative,
 }
 
 t8dg_timestepping_data_t *
-t8dg_timestepping_data_new_cfl (int time_order, double start_time, double end_time, double cfl, int use_implicit_timestepping,
+t8dg_timestepping_data_new_cfl (int time_order, double start_time, double end_time, double cfl, int use_implicit_timestepping, int use_ssprk3,
                                 int preconditioner_selection, int multigrid_levels)
 {
   T8DG_ASSERT (time_order > 0);
@@ -212,6 +213,7 @@ t8dg_timestepping_data_new_cfl (int time_order, double start_time, double end_ti
   time_data->step_number = 0;
   time_data->delta_t = -1;
   time_data->use_implicit_timestepping = use_implicit_timestepping;
+  time_data->use_ssprk3 = use_ssprk3;
   time_data->preconditioner_selection = preconditioner_selection;
   time_data->multigrid_levels = multigrid_levels;
   return time_data;
@@ -219,7 +221,7 @@ t8dg_timestepping_data_new_cfl (int time_order, double start_time, double end_ti
 
 t8dg_timestepping_data_t *
 t8dg_timestepping_data_new_constant_timestep (int time_order, double start_time, double end_time, double delta_t,
-                                              int use_implicit_timestepping, int preconditioner_selection, int multigrid_levels)
+                                              int use_implicit_timestepping, int use_ssprk3, int preconditioner_selection, int multigrid_levels)
 {
   T8DG_ASSERT (time_order > 0);
   t8dg_timestepping_data_t *time_data = T8DG_ALLOC (t8dg_timestepping_data_t, 1);
@@ -230,6 +232,7 @@ t8dg_timestepping_data_new_constant_timestep (int time_order, double start_time,
   time_data->step_number = 0;
   time_data->delta_t = delta_t;
   time_data->use_implicit_timestepping = use_implicit_timestepping;
+  time_data->use_ssprk3 = use_ssprk3;
   time_data->preconditioner_selection = preconditioner_selection;
   time_data->multigrid_levels = multigrid_levels;
   return time_data;
@@ -921,8 +924,10 @@ t8dg_timestepping_choose_impl_expl_method (t8dg_time_matrix_application time_der
   if (time_data->use_implicit_timestepping == 0) {
     /* An explicit time stepping method has been chosen */
     t8dg_debugf ("Explicit RKV of order %d has been called.\n", time_data->time_order);
-    //t8dg_timestepping_runge_kutta_step (time_derivative, time_data, pdof_array, user_data);
-    t8dg_timestepping_ssprk3 (time_derivative, time_data, pdof_array, user_data);
+    if (time_data->use_ssprk3 == 0)
+      t8dg_timestepping_runge_kutta_step (time_derivative, time_data, pdof_array, user_data);
+    else
+      t8dg_timestepping_ssprk3 (time_derivative, time_data, pdof_array, user_data);
   }
   else if (time_data->use_implicit_timestepping == 1) {
 #if T8_WITH_PETSC

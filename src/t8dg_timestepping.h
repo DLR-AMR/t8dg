@@ -166,11 +166,11 @@ void
 void                t8dg_runge_kutta_fill_coefficients (int time_order, double **prk_a, double **prk_b, double **prk_c);
 
 t8dg_timestepping_data_t *t8dg_timestepping_data_new_cfl (int time_order, double start_time, double end_time, double cfl,
-                                                          int use_implicit_timestepping, int preconditioner_selection,
+                                                          int use_implicit_timestepping, int use_ssprk3, int preconditioner_selection,
                                                           int multigrid_levels);
 
 t8dg_timestepping_data_t *t8dg_timestepping_data_new_constant_timestep (int time_order, double start_time, double end_time, double delta_t,
-                                                                        int use_implicit_timestepping, int preconditioner_selection,
+                                                                        int use_implicit_timestepping, int use_ssprk3, int preconditioner_selection,
                                                                         int multigrid_levels);
 
 void                t8dg_timestepping_data_destroy (t8dg_timestepping_data_t ** ptime_data);

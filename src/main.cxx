@@ -164,6 +164,7 @@ main (int argc, char *argv[])
   int                 uniform_level, max_level, min_level;
   int                 time_order;
   int                 use_implicit_timestepping;
+  int                 use_ssprk3;
   int                 preconditioner_selection;
   int                 multigrid_levels;
   int                 number_LGL_points;
@@ -250,6 +251,8 @@ main (int argc, char *argv[])
   sc_options_add_int (opt, 'I', "use_implicit_timestepping", &use_implicit_timestepping, 0,
                       "Whether implicit or explicit time stepping Runge Kutta should be used. Default: 0.\n"
                       "\t\t0: explicit RKV (max. time_order <= 4)\n" "\t\t1: implicit DIRK (max. time_order <= 3)\n");
+  sc_options_add_int (opt, '\0', "ssprk3", &use_ssprk3, 0,
+                      "Whether default RK method or strong-stability preserving 3rd order RK method should be used.\n");
   sc_options_add_int (opt, 'P', "preconditioner_selection", &preconditioner_selection, 0,
                       "Choose which preconditioner should be applied to the implicit system, resulting from the time stepping method (only applicable if an implicit timestepping method is choosen). Default: 0.\n"
                       "\t\t0: No preconditioning\n" "\t\t1: Block-Jacobi-Preconditioner\n"
@@ -336,7 +339,7 @@ main (int argc, char *argv[])
     problem =
       t8dg_advect_diff_problem_init_arguments (icmesh, mshfile_prefix, mshfile_dim, uniform_level, number_LGL_points, initial_cond_arg, flow_velocity,
                                                diffusion_coefficient, start_time, end_time, cfl, delta_t, time_steps, time_order,
-                                               use_implicit_timestepping, preconditioner_selection, multigrid_levels, refinement_threshold, coarsening_threshold,
+                                               use_implicit_timestepping, use_ssprk3, preconditioner_selection, multigrid_levels, refinement_threshold, coarsening_threshold,
                                                &williamson_data, &windfield_file_data, min_level, max_level, adapt_arg, adapt_freq, prefix, vtk_freq, numerical_flux_arg,
                                                source_sink_arg, refine_error,
                                                sc_MPI_COMM_WORLD);

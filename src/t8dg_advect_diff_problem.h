@@ -80,6 +80,7 @@ t8dg_linear_advection_diffusion_problem_t *t8dg_advect_diff_problem_init_argumen
                                                                                     int time_steps,
                                                                                     int time_order,
                                                                                     int use_implicit_timestepping,
+                                                                                    int use_ssprk3,
                                                                                     int preconditioner_selection,
                                                                                     int multigrid_levels,
                                                                                     double refinement_threshold,

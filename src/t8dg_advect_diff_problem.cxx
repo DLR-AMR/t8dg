@@ -304,6 +304,7 @@ t8dg_advect_diff_problem_init_arguments (int icmesh,
                                          int time_steps,
                                          int time_order,
                                          int use_implicit_timestepping,
+                                         int use_ssprk3,
                                          int preconditioner_selection,
                                          int multigrid_levels,
                                          double refinement_threshold,
@@ -352,7 +353,7 @@ t8dg_advect_diff_problem_init_arguments (int icmesh,
   vtk_data = t8dg_output_vtk_data_new (prefix, vtk_freq);
   if (cfl > 0) {
     time_data =
-      t8dg_timestepping_data_new_cfl (time_order, start_time, end_time, cfl, use_implicit_timestepping, preconditioner_selection,
+      t8dg_timestepping_data_new_cfl (time_order, start_time, end_time, cfl, use_implicit_timestepping, use_ssprk3, preconditioner_selection,
                                       multigrid_levels);
   }
   else {
@@ -360,7 +361,7 @@ t8dg_advect_diff_problem_init_arguments (int icmesh,
       delta_t = (end_time - start_time) / time_steps;
     }
     time_data =
-      t8dg_timestepping_data_new_constant_timestep (time_order, start_time, end_time, delta_t, use_implicit_timestepping,
+      t8dg_timestepping_data_new_constant_timestep (time_order, start_time, end_time, delta_t, use_implicit_timestepping, use_ssprk3,
                                                     preconditioner_selection, multigrid_levels);
   }
   init_time += sc_MPI_Wtime ();
