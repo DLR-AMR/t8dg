@@ -347,11 +347,14 @@ t8dg_mptrac_flow_3D_fn (double x_vec[3], double flux_vec[3], double t, const t8d
     intpol_met_time_3d (meteo1_noconst, meteo1_noconst->v, meteo2_noconst, meteo2_noconst->v, physical_time_s, pressure, lon, lat, flux_vec + 1, ci, cw, 0);    /* 0 here since we can reuse the interpolation weights */
   }
   else {
+    /* Apply windfield interpolation in elements at the poles. Avoid strong wf discontinuity at this point from setting hard 0 in the whole element.*/
+    /* Here, the wf interface value (y-neighbor) is linearly interpolated to 0 at the LGL nodes in the (global) y-boundary elements from inside (y-neighbor interface) to outside (-> pole).*/
+
     level = mptrac_flux_data->current_element_level ();
     /* Hard coded length of element in y-direction based on refinement level and assumened cube domain ([0,1]^3)*/
     length_y_direction = pow(2, -1 * level);
     
-    /* Observed element is at north pole but not at global boundary*/
+    /* Observed element is at north pole, node is not at (global!) boundary but inside the element.*/
     if (mptrac_flux_data->is_current_element_at_north_pole () && x_vec[1] != 1.0) {
       x_vec_neighbor_interface[1] = 1.0 - length_y_direction; // y coordinate of interface of neighbor element
 
@@ -362,7 +365,7 @@ t8dg_mptrac_flow_3D_fn (double x_vec[3], double flux_vec[3], double t, const t8d
       flux_vec[1] = flux_vec[1] - (x_vec[1] - x_vec_neighbor_interface[1]) / length_y_direction * flux_vec[1];
     }
 
-    /* Observed element is at south pole but not at global boundary */
+    /* Observed element is at south pole, node is not at (global!) boundary but inside the element.*/
     else if (mptrac_flux_data->is_current_element_at_south_pole () && x_vec[1] != 0.0) {
       x_vec_neighbor_interface[1] = length_y_direction; // y coordinate of interface of neighbor element
 
@@ -372,7 +375,7 @@ t8dg_mptrac_flow_3D_fn (double x_vec[3], double flux_vec[3], double t, const t8d
       /* Create flux inside element from linear interpolating flux from interface to 0*/
       flux_vec[1] = flux_vec[1] - (x_vec_neighbor_interface[1] - x_vec[1]) / length_y_direction * flux_vec[1];
     }
-    else // Element is y boundary and node at global boundary -> node at north or south pole
+    else // Element is at the y boundary and node at global boundary -> node at north or south pole
       flux_vec[1] = 0;
   }
   if (!mptrac_flux_data->is_current_element_at_top_or_bottom ()) {
