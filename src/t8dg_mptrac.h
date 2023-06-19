@@ -81,6 +81,12 @@ class t8dg_mptrac_flux_data : public t8dg_flux_data_base
     
     inline bool is_current_element_at_top_or_bottom () const;
 
+    inline bool is_current_element_at_north_pole () const;
+
+    inline bool is_current_element_at_south_pole () const;
+
+    inline int current_element_level () const;
+
     inline int point_is_in_box (const double x[3]) const;
 
     /** Compute the euclidean distance of a point from the center of the box source (in km) */
@@ -113,6 +119,11 @@ class t8dg_mptrac_flux_data : public t8dg_flux_data_base
 
     bool current_element_is_at_pole;
     bool current_element_is_at_top_or_bottom;
+
+    bool is_south_boundary;
+    bool is_north_boundary;
+
+    int level;
 
     t8dg_mptrac_box point_source;
 };

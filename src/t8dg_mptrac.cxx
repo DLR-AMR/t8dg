@@ -182,8 +182,8 @@ t8dg_mptrac_flux_data::before_first_call_on_element (t8_forest_t forest, t8_loci
   /* Determine whether this element is at a pole or at the top/bottom. */
   int                 is_upper_boundary = 0;
   int                 is_lower_boundary = 0;
-  int                 is_south_boundary = 0;
-  int                 is_north_boundary = 0;
+  is_south_boundary = 0;
+  is_north_boundary = 0;
   const t8_eclass_t   tree_class = t8_forest_get_tree_class (forest, itree);
   t8_eclass_scheme_c *scheme = t8_forest_get_eclass_scheme (forest, tree_class);
   const t8_element_t *element = t8_forest_get_element_in_tree (forest, itree, element_in_tree);
@@ -206,6 +206,7 @@ t8dg_mptrac_flux_data::before_first_call_on_element (t8_forest_t forest, t8_loci
   }
   current_element_is_at_pole = is_south_boundary || is_north_boundary;
   current_element_is_at_top_or_bottom = is_upper_boundary || is_lower_boundary;
+  level = scheme->t8_element_level (element);
 }
 
 bool
@@ -218,6 +219,24 @@ bool
 t8dg_mptrac_flux_data::is_current_element_at_top_or_bottom () const
 {
   return current_element_is_at_top_or_bottom;
+}
+
+bool
+t8dg_mptrac_flux_data::is_current_element_at_north_pole () const
+{
+  return is_north_boundary;
+}
+
+bool
+t8dg_mptrac_flux_data::is_current_element_at_south_pole () const
+{
+  return is_south_boundary;
+}
+
+int
+t8dg_mptrac_flux_data::current_element_level () const
+{
+  return level;
 }
 
 void
@@ -300,6 +319,8 @@ void
 t8dg_mptrac_flow_3D_fn (double x_vec[3], double flux_vec[3], double t, const t8dg_flux_data_base * flux_data)
 {
   double              lat, lon, pressure;
+  double              level, length_y_direction, lat_neighbor_interface; //needed for windfield interpolation in element at pole
+  double              x_vec_neighbor_interface[] = {x_vec[0], 0, x_vec[2]}; //needed for windfield interpolation in element at pole
   T8DG_ASSERT (dynamic_cast < const t8dg_mptrac_flux_data * >(flux_data) != NULL);
   const t8dg_mptrac_flux_data *mptrac_flux_data = static_cast < const t8dg_mptrac_flux_data * >(flux_data);
   const t8_mptrac_context_t *mptrac_context = mptrac_flux_data->get_context ();
@@ -326,7 +347,33 @@ t8dg_mptrac_flow_3D_fn (double x_vec[3], double flux_vec[3], double t, const t8d
     intpol_met_time_3d (meteo1_noconst, meteo1_noconst->v, meteo2_noconst, meteo2_noconst->v, physical_time_s, pressure, lon, lat, flux_vec + 1, ci, cw, 0);    /* 0 here since we can reuse the interpolation weights */
   }
   else {
-    flux_vec[1] = 0;
+    level = mptrac_flux_data->current_element_level ();
+    /* Hard coded length of element in y-direction based on refinement level and assumened cube domain ([0,1]^3)*/
+    length_y_direction = pow(2, -1 * level);
+    
+    /* Observed element is at north pole but not at global boundary*/
+    if (mptrac_flux_data->is_current_element_at_north_pole () && x_vec[1] != 1.0) {
+      x_vec_neighbor_interface[1] = 1.0 - length_y_direction; // y coordinate of interface of neighbor element
+
+      t8_mptrac_coords_to_lonlatpressure (mptrac_context, x_vec_neighbor_interface, &lon, &lat_neighbor_interface, &pressure);
+      intpol_met_time_3d (meteo1_noconst, meteo1_noconst->v, meteo2_noconst, meteo2_noconst->v, physical_time_s, pressure, lon, lat_neighbor_interface, flux_vec + 1, ci, cw, 0);    /* 0 here since we can reuse the interpolation weights */  
+
+      /* Create flux inside element from linear interpolating flux from interface to 0*/
+      flux_vec[1] = flux_vec[1] - (x_vec[1] - x_vec_neighbor_interface[1]) / length_y_direction * flux_vec[1];
+    }
+
+    /* Observed element is at south pole but not at global boundary */
+    else if (mptrac_flux_data->is_current_element_at_south_pole () && x_vec[1] != 0.0) {
+      x_vec_neighbor_interface[1] = length_y_direction; // y coordinate of interface of neighbor element
+
+      t8_mptrac_coords_to_lonlatpressure (mptrac_context, x_vec_neighbor_interface, &lon, &lat_neighbor_interface, &pressure);
+      intpol_met_time_3d (meteo1_noconst, meteo1_noconst->v, meteo2_noconst, meteo2_noconst->v, physical_time_s, pressure, lon, lat_neighbor_interface, flux_vec + 1, ci, cw, 0);    /* 0 here since we can reuse the interpolation weights */  
+
+      /* Create flux inside element from linear interpolating flux from interface to 0*/
+      flux_vec[1] = flux_vec[1] - (x_vec_neighbor_interface[1] - x_vec[1]) / length_y_direction * flux_vec[1];
+    }
+    else // Element is y boundary and node at global boundary -> node at north or south pole
+      flux_vec[1] = 0;
   }
   if (!mptrac_flux_data->is_current_element_at_top_or_bottom ()) {
     /* Compute interpolation of w (vertical velocity, z axis) */
