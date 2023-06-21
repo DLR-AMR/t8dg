@@ -1,0 +1,122 @@
+
+Overview changings and bugs
+
+	* Bug in memory allocation when using implicit time integration (t8dg_timestepping.cxx)
+		- Because of this bug, allocated memory was not set free after usage
+		- Computation crashed due to full memory (explicit time integration worked well)
+		- Reactivating commented code lines solved the problem 
+
+	* Bug fixing within the (implicit) time integration (t8dg_timestepping.cxx)
+		- Bug caused wrong (too fast or slow) movement of solution
+		- Parts of the equation system was not observed
+		- Hint for merging: Problem could be possibly solved before within Niklas' branch
+	
+	* Including blas lib 
+		- Changed include from 'blas.h' to 'gsl_cblas.h' in file config/t8dg_blas.m4
+		- Difference between compiling on JUWELS or TeamServer:
+			. Relates to: config/t8dg_blas.m4 and src/t8dg_dmatrix.c
+			. On JUWELS, 'gsl_cblas' needs to be included, on TeamServer 'cblas'
+			. Solution: Add path to gsl lib (.../mptrac/libs/build/include/gs) when compiling on TeamServer in config command to use same code on both systems.
+			. HINT, when code is merged: Change docu in wiki regarding configuring t8dg on TeamServer
+	
+	* Added time stamp to t8dg output code (within submodule sc; TODO: Take care about pushing and merging)
+	
+	* TODO: Look closely at testfiles (make check)! Crashed while doing (src/t8dg/test/t8dg_test_timestepping.cxx)
+		
+	* Bug fixed in transforming z-velocity from windfield to cube (t8dg_mptrac.cxx)
+		- Bug caused wrong z-movement in testcases with windfields assuming vertical movement
+		- Changing way of transforming hPa/h (input from wf) to km/h solved problem 
+	
+	* Bug fixed that flipped sign of y-coordinate (latitude) when read out and interpolated
+		- Bug cause wrong sign in y-direction movement of solution
+		- Changed in t8_mptrac_interpolate.cxx not t8dg
+		- Swapped interpolation limits for y-coordinate in t8_mptrac_coords_to_lonlatpressure
+
+	* Implemented new (modified) initial condition by Williamson et al. to test for accuracy of DG solver 
+		- Applied on globe
+		- Modified since it was constructed for 2D shallow water equations (solution of SWE is third spatial coordinate -> One value is missing for our purpose)
+		- Smoothing from inside (concentration = 1) to outside with cos term
+		- It is possible to change size and shape by passing different parameters at run time (as factors of earth radius)
+			. inner_radius := Domain, in which concentration is constant 1
+			. ring_radius := Domain, in which concentration is smoothed to 0 towards the outside area
+			. inner_radius + ring_radius = Domain, in which concentration is > 0
+			. weight_direction := value to change z expansion of cloud	
+
+	* Implemented new AMR indicator (by Loehner)
+		- Indicator used up to now did not refine the important regions properly
+		- Curvature is used to compute indicator and results in much better refinement
+		- Implemented flexible refinement and coarsening thresholds
+
+	* Implemented parameter to use different windfield for MPTRAC simulation
+		- Might be necessary to edit parameter, which stores the time between to files, as well; depending on wf
+
+	* Added new strong-stability preserving Runge-Kutta time solver (order 3)
+		- DG solver does not preserve physically meaningful results ( 0<=solution<=1 ) on its own => Use limiter
+		- Those are embedded after each RK stage and need SSPRK methods
+		- Implemented positivity-preserving limiter by Zhang & Shu to avoid unphysically negative results
+			. Implemented adapted version as well to avoid unphysically values > 1
+			. L2 errors stay the same in tests with(-out) limiters on 1D grid
+			. Works on 3D mesh as well and passes wf test on equator
+			. TODO: Seems to create problems at poles using arbitrary wf (boundary condition of problem not defined physically meaningful); more details later
+
+	* Implemented windfield (y-coordinate) interpolation in elements at the poles.
+		- Up to now, the boundary conditions in y-direction are not well-defined. So, the flow in y-direction in `pole-elements` is set to 0
+		- Creates discontinuity of flow in this region
+		- Used as idea to resolve the boundary problem described before
+		- Do linear interpolation from (y-neighbor) interface wf value to 0 at other interface in y-direction (global boundary -> pole)
+
+
+Results and TODOs
+
+	* Problems regarding limiter and arbitrary windfields:
+		- Idea to use limiter arose from the problem that negative values appear
+		- y-boundary condition seems to create instabilities
+			. After a few time steps (depending on chosen options), values at the poles appear.
+				* This cannot be expected because the time is too short for the concentration to reach the poles
+				* Has to result from instabilities. Values at boundary are exactly 1, which is result of the maximum limiting
+				* If the max. limiter is not used, the DOF explode at the y-boundaries
+				* Observation: Max. limiter alone is stable, pos.pres. limiter alone is not!
+				* Chronological order of applying both limiter matters and gives different results
+			. This phenomenon does not occur when using the wf, which blows along the equator (maybe, the flow in y-direction is the problem)
+		- Both limiter work and restrict the value domain to the defined range
+		- Testing minimal examples, printing DOF at different time stages and comparing the values (before/after DG update)
+			. I could not see the exact problem after that
+			. DOF in boundary elements exploded `out of nothing` after DG update, did not behave weird before
+				* Only observation: (Probably by the pos. limiter) Sometimes one DOF in an element was around 10^(-10) while the others were exacatly 0
+				* Could this single value bring a problem?
+	
+	* General approach: Change the numerical flux
+		- Currently, a Lax-Friedrich flux is implemented (but the term del_x/delt is not computed and used, but a hard-coded 1)
+		- One could test different values here
+		- Or even different fluxes (e.g., local LF flux)
+		- IDEA from Johannes M.: simple upwind flux
+
+	* TODO: Create 2D projection of solution onto the x-y plane and integrate the concentration with respect to the z-direction
+		- Concentration in atmosphere should be projected to the earth's surface for better visualization and comparison
+		- Several steps to do here:
+			. Think about refinement at the end or define which elements in z direction belong to the element at z=0 (AMR!)
+			. Watch out for different scaling (altitude vs. pressure) and correspondingly different `real-world element lengths`
+			. Compute mean value per element? Watch out for concentration! Absolute mass needs to be computed in element if needed
+			. For integration with respect to z, we need the parallel search through all processes due to load balancing
+			. Could be reasonable to refine the x-y plane as far as possible (MaxRefLvl) and get the most precision
+			. Do not refine the whole cube! In three dimensions, there would be way too much elements
+					.
+					.
+					.
+
+	* Results from convergence test:
+		- Tried to run convergence test with respect to the refinement level (min level 4, max level 4-7)
+		- Used new implementations -> SSPRK3 (explicit!), both limiters, Loehner indicator
+		- Problem: In comparison to implicit RK (used mostly before on JUWELS in 3D runs), explicit needs much smaller time steps
+			. Implicit: Good results even up to lvl 7 for delT=0.1 (or lvl 8 used with delT=0.01)
+			. Explicit: Needed smaller delT (used 0.005 for lvl 7) to not create instabilities and MUCH more computational ressources
+				* Simple comparison: Impl.: 4*48 processes (lvl 7) took 25 minutes, Exp.: 16*64 processes (lvl 7) > 9 hours for 158/288 simulation time
+				* Possible problem: Too  much refinement from Loehner (see below)
+				* Problem resulting from more used processes: Amount of outut files increases (even twice, because of mor time steps) dramatically (JUWELS does not allow for arbitrary much INodes [files/directories])
+
+
+
+
+
+
+
